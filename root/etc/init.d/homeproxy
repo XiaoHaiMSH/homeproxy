@@ -28,6 +28,11 @@ log() {
 }
 
 start_service() {
+	mkdir -p "$RUN_DIR"
+
+	# Drop references to nodes that were removed by a subscription update or by hand
+	ucode -S "$HP_DIR/scripts/cleanup_urltest.uc" >>"$LOG_PATH" 2>&1
+
 	config_load "$CONF"
 
 	local routing_mode proxy_mode

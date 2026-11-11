@@ -103,6 +103,90 @@ export function normalizeList(value) {
 	return (type(value) === 'array') ? value : [value];
 };
 
+/*
+ * Drop references to nodes that no longer exist from the URLTest lists (the
+ * main node group and the application routing rules) and fall back to the
+ * first available node when the configured main node itself is gone.
+ */
+export function reconcileUrltestNodes(uci, config, logger) {
+	let changed = false, removed = 0;
+
+	function log(message) {
+		if (type(logger) === 'function')
+			logger(message);
+	}
+
+	function nodeExists(id) {
+		const cfg = uci.get_all(config, id);
+
+		return type(cfg) === 'object' && cfg['.type'] === 'node';
+	}
+
+	function reconcileList(section, option) {
+		const current = normalizeList(uci.get(config, section, option));
+
+		if (!length(current))
+			return [];
+
+		const available = filter(current, (id) => {
+			if (nodeExists(id))
+				return true;
+
+			removed++;
+			log(sprintf('URLTest node %s is unavailable; removing it from %s.%s.', id, section, option));
+			return false;
+		});
+
+		if (sprintf('%J', current) !== sprintf('%J', available)) {
+			if (length(available))
+				uci.set(config, section, option, available);
+			else
+				uci.delete(config, section, option);
+			changed = true;
+		}
+
+		return available;
+	}
+
+	const mainNodes = reconcileList('config', 'main_urltest_nodes');
+
+	/* application routing rules */
+	uci.foreach(config, 'app_rule', (section) => {
+		reconcileList(section['.name'], 'urltest_nodes');
+
+		const node = section.node;
+
+		if (isEmpty(node) || node in ['main-out', 'urltest', 'direct-out', 'reject-out', 'tailscale'])
+			return;
+
+		if (!nodeExists(node)) {
+			uci.set(config, section['.name'], 'node', 'main-out');
+			changed = true;
+			log(sprintf('Node %s is unavailable; routing rule %s falls back to the main node.', node, section['.name']));
+		}
+	});
+
+	const mainNode = uci.get(config, 'config', 'main_node');
+
+	if (mainNode === 'urltest' && !length(mainNodes)) {
+		const fallback = uci.get_first(config, 'node') || 'nil';
+		uci.set(config, 'config', 'main_node', fallback);
+		changed = true;
+		log((fallback === 'nil') ?
+			'Main URLTest group is empty; disabling the client.' :
+			sprintf('Main URLTest group is empty; switching to node %s.', fallback));
+	} else if (!isEmpty(mainNode) && mainNode !== 'nil' && mainNode !== 'urltest' && !nodeExists(mainNode)) {
+		const fallback = uci.get_first(config, 'node') || 'nil';
+		uci.set(config, 'config', 'main_node', fallback);
+		changed = true;
+		log((fallback === 'nil') ?
+			'Main node is unavailable; disabling the client.' :
+			sprintf('Main node %s is unavailable; switching to node %s.', mainNode, fallback));
+	}
+
+	return { changed, removed };
+};
+
 /* Values the core models as a range: "number" or "from-to" */
 export function rangeValue(v) {
 	v = trim(v || '');

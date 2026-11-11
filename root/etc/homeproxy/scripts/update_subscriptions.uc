@@ -16,7 +16,7 @@ import { urldecode, urlencode } from 'luci.http';
 
 import {
 	wGET, decodeBase64Str, getTime, isEmpty, parseURL,
-	validation, HP_DIR, RUN_DIR
+	reconcileUrltestNodes, validation, HP_DIR, RUN_DIR
 } from 'homeproxy';
 
 /* UCI config start */
@@ -37,8 +37,6 @@ const allow_insecure = uci.get(uciconfig, ucisubscription, 'allow_insecure') || 
       user_agent = uci.get(uciconfig, ucisubscription, 'user_agent'),
       via_proxy = uci.get(uciconfig, ucisubscription, 'update_via_proxy') || '0';
 
-let main_node;
-main_node = uci.get(uciconfig, ucimain, 'main_node') || 'nil';
 /* UCI config end */
 
 /* String helper start */
@@ -691,34 +689,14 @@ function main() {
 	uci.commit(uciconfig);
 
 	let need_restart = (via_proxy !== '1');
-	if (!isEmpty(main_node)) {
-		const first_server = uci.get_first(uciconfig, ucinode);
-		if (first_server) {
-			let main_urltest_nodes;
-			if (main_node === 'urltest') {
-				main_urltest_nodes = filter(uci.get(uciconfig, ucimain, 'main_urltest_nodes'), (v) => {
-					if (!uci.get(uciconfig, v)) {
-						log(sprintf('Node %s is gone, removing from urltest list.', v));
-						return false;
-					}
-					return true;
-				});
-			}
 
-			if ((main_node === 'urltest') ? !length(main_urltest_nodes) : !uci.get(uciconfig, main_node)) {
-				uci.set(uciconfig, ucimain, 'main_node', first_server);
-				uci.commit(uciconfig);
-				need_restart = true;
+	/* Drop references to nodes that disappeared with this update: the URLTest
+	   lists of the main node and of the routing rules, and stale main nodes. */
+	const reconcile = reconcileUrltestNodes(uci, uciconfig, log);
 
-				log('Main node is gone, switching to the first node.');
-			}
-		} else {
-			uci.set(uciconfig, ucimain, 'main_node', 'nil');
-			uci.commit(uciconfig);
-			need_restart = true;
-
-			log('No available node, disable tproxy.');
-		}
+	if (reconcile.changed) {
+		uci.commit(uciconfig);
+		need_restart = true;
 	}
 
 	if (need_restart) {
