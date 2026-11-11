@@ -531,28 +531,9 @@ return view.extend({
 			'tailscale', 'homeproxy');
 		ss = o.subsection;
 
-		so = ss.option(form.Flag, 'enabled', _('Enable Tailscale'),
-			_('Join the router to a Tailscale network through the sing-box endpoint. Unlike the proxy nodes it works without a main node; LAN clients can only reach the tailnet while the transparent proxy is running. MagicDNS is delivered to the LAN in the "Bypass mainland China" and "Global" routing modes only. The coordination server and the peers are contacted directly, never through the proxy nodes.'));
+		so = ss.option(form.Flag, 'enabled', _('Enable Tailscale'));
 		so.default = so.disabled;
 		so.rmempty = false;
-
-		so = ss.option(form.DummyValue, '_tailscale_build', _('Build support'));
-		so.depends('enabled', '1');
-		so.renderWidget = function() {
-			const version = String((features && features.version) || '').match(/^(\d+)\.(\d+)/),
-			      new_enough = version &&
-				((+version[1] > 1) || (+version[1] === 1 && +version[2] >= 14));
-
-			if (version && !new_enough)
-				return E('span', { style: 'color:#ff4d4f' },
-					_('The Tailscale endpoint needs sing-box 1.14 or newer, update the core first.'));
-
-			if (!(features && features.with_tailscale))
-				return E('span', { style: 'color:#ff4d4f' },
-					_('The running sing-box build does not include Tailscale support (with_tailscale), the endpoint cannot start.'));
-
-			return E('span', {}, _('The running sing-box build includes Tailscale support.'));
-		};
 
 		so = ss.option(form.Value, 'auth_key', _('Authentication key'),
 			_('Only used when the node is created for the first time. Leave it empty to sign in with the login link below.'));

@@ -2925,10 +2925,6 @@ msgid "Hostname"
 msgstr "主机名"
 
 #: htdocs/luci-static/resources/view/homeproxy/client.js
-msgid "Join the router to a Tailscale network through the sing-box endpoint. Unlike the proxy nodes it works without a main node; LAN clients can only reach the tailnet while the transparent proxy is running. MagicDNS is delivered to the LAN in the \"Bypass mainland China\" and \"Global\" routing modes only. The coordination server and the peers are contacted directly, never through the proxy nodes."
-msgstr "通过 sing-box endpoint 将路由器加入 Tailscale 网络。与代理节点不同，它不需要主节点；只有在透明代理运行时，局域网设备才能访问 tailnet。MagicDNS 仅在「绕过中国大陆」和「全局」路由模式下对局域网生效。与协调服务器及对端节点的连接始终直连，不经过代理节点。"
-
-#: htdocs/luci-static/resources/view/homeproxy/client.js
 msgid "Keep locally reachable subnets outside the selected exit node."
 msgstr "使本地可达的子网不经过所选出口节点。"
 
@@ -2965,14 +2961,6 @@ msgid "The device name shown in the Tailscale network. The system hostname is us
 msgstr "在 Tailscale 网络中显示的设备名。留空则使用系统主机名。"
 
 #: htdocs/luci-static/resources/view/homeproxy/client.js
-msgid "The running sing-box build does not include Tailscale support (with_tailscale), the endpoint cannot start."
-msgstr "当前运行的 sing-box 未包含 Tailscale 支持（with_tailscale），endpoint 无法启动。"
-
-#: htdocs/luci-static/resources/view/homeproxy/client.js
-msgid "The running sing-box build includes Tailscale support."
-msgstr "当前运行的 sing-box 已包含 Tailscale 支持。"
-
-#: htdocs/luci-static/resources/view/homeproxy/client.js
 msgid "UDP port used for WireGuard and peer-to-peer traffic. A port is chosen automatically when empty."
 msgstr "用于 WireGuard 和点对点流量的 UDP 端口。留空则自动选择。"
 
@@ -2993,12 +2981,8 @@ msgid "valid network in CIDR notation"
 msgstr "有效的 CIDR 网络"
 
 #: htdocs/luci-static/resources/view/homeproxy/client.js
-msgid "Build support"
-msgstr "构建支持"
-
-#: htdocs/luci-static/resources/view/homeproxy/client.js
-msgid "The Tailscale endpoint needs sing-box 1.14 or newer, update the core first."
-msgstr "Tailscale endpoint 需要 sing-box 1.14 或更高版本，请先升级内核。"
+msgid "Enable Tailscale"
+msgstr "启用 Tailscale"
 
 #~ msgid "China list version"
 #~ msgstr "国内域名列表版本"

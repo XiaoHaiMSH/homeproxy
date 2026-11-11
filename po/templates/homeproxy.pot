@@ -2869,10 +2869,6 @@ msgid "Hostname"
 msgstr ""
 
 #: htdocs/luci-static/resources/view/homeproxy/client.js
-msgid "Join the router to a Tailscale network through the sing-box endpoint. Unlike the proxy nodes it works without a main node; LAN clients can only reach the tailnet while the transparent proxy is running. MagicDNS is delivered to the LAN in the \"Bypass mainland China\" and \"Global\" routing modes only. The coordination server and the peers are contacted directly, never through the proxy nodes."
-msgstr ""
-
-#: htdocs/luci-static/resources/view/homeproxy/client.js
 msgid "Keep locally reachable subnets outside the selected exit node."
 msgstr ""
 
@@ -2909,14 +2905,6 @@ msgid "The device name shown in the Tailscale network. The system hostname is us
 msgstr ""
 
 #: htdocs/luci-static/resources/view/homeproxy/client.js
-msgid "The running sing-box build does not include Tailscale support (with_tailscale), the endpoint cannot start."
-msgstr ""
-
-#: htdocs/luci-static/resources/view/homeproxy/client.js
-msgid "The running sing-box build includes Tailscale support."
-msgstr ""
-
-#: htdocs/luci-static/resources/view/homeproxy/client.js
 msgid "UDP port used for WireGuard and peer-to-peer traffic. A port is chosen automatically when empty."
 msgstr ""
 
@@ -2937,9 +2925,5 @@ msgid "valid network in CIDR notation"
 msgstr ""
 
 #: htdocs/luci-static/resources/view/homeproxy/client.js
-msgid "Build support"
-msgstr ""
-
-#: htdocs/luci-static/resources/view/homeproxy/client.js
-msgid "The Tailscale endpoint needs sing-box 1.14 or newer, update the core first."
+msgid "Enable Tailscale"
 msgstr ""
