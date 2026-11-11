@@ -73,6 +73,13 @@ start_service() {
 			return 1
 		fi
 
+		# The cache file lives in /etc so the DNS cache survives a reboot
+		if grep -q '"cache_file"' "$RUN_DIR/sing-box-c.json"; then
+			mkdir -p "$HP_DIR/cache"
+			[ -e "$HP_DIR/cache/cache.db" ] || touch "$HP_DIR/cache/cache.db"
+			chown -R sing-box:sing-box "$HP_DIR/cache" 2>"/dev/null"
+		fi
+
 		# Auto update
 		local auto_update auto_update_time
 		config_get_bool auto_update "subscription" "auto_update" "0"
@@ -154,7 +161,7 @@ start_service() {
 			procd_add_jail "sing-box-c" log procfs
 			procd_add_jail_mount "$RUN_DIR/sing-box-c.json"
 			procd_add_jail_mount_rw "$RUN_DIR/sing-box-c.log"
-			[ "$routing_mode" != "bypass_mainland_china" ] || procd_add_jail_mount_rw "$RUN_DIR/cache.db"
+			[ ! -d "$HP_DIR/cache" ] || procd_add_jail_mount_rw "$HP_DIR/cache/"
 			procd_add_jail_mount "$HP_DIR/certs/"
 			[ ! -d "$HP_DIR/dashboard" ] || procd_add_jail_mount "$HP_DIR/dashboard/"
 			procd_add_jail_mount "/etc/ssl/"
@@ -223,13 +230,6 @@ start_service() {
 	procd_set_param command "$HP_DIR/scripts/clean_log.sh"
 	procd_set_param respawn
 	procd_close_instance
-
-	case "$routing_mode" in
-	"bypass_mainland_china")
-		# Prepare cache db
-		[ -e "$RUN_DIR/cache.db" ] || touch "$RUN_DIR/cache.db"
-		;;
-	esac
 
 	{ [ "$outbound_node" = "nil" ] && [ "$tailscale_enabled" = "0" ]; } || echo > "$RUN_DIR/sing-box-c.log"
 	if [ "$server_enabled" = "1" ]; then

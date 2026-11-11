@@ -1166,22 +1166,23 @@ if (config.dns.rules && isEmpty(config.dns.rules))
 	config.dns.rules = null;
 
 /* Experimental start */
-if (routing_mode === 'bypass_mainland_china') {
-	config.experimental = {
-		cache_file: {
-			enabled: true,
-			path: RUN_DIR + '/cache.db'
-		}
-	};
-}
+/*
+ * The cache file keeps the DNS cache (and the API state, once a clash api is
+ * configured) across restarts, so it is stored in /etc instead of the runtime
+ * directory which is wiped on every reboot.
+ */
+config.experimental = {
+	cache_file: {
+		enabled: true,
+		path: HP_DIR + '/cache/cache.db',
+		store_dns: true
+	}
+};
 /* Unified delay measuring (dns + tcp + tls + request) for all outbounds */
-if (!isEmpty(main_node)) {
-	if (!config.experimental)
-		config.experimental = {};
+if (!isEmpty(main_node))
 	config.experimental.unified_delay = {
 		enabled: true
 	};
-}
 /* Experimental end */
 
 /* API service: serves the dashboard and answers the API queries, the Tailscale
