@@ -35,11 +35,7 @@ start_service() {
 	config_get proxy_mode "config" "proxy_mode" "redirect_tproxy"
 
 	local outbound_node
-	if [ "$routing_mode" != "custom" ]; then
-		config_get outbound_node "config" "main_node" "nil"
-	else
-		config_get outbound_node "routing" "default_outbound" "nil"
-	fi
+	config_get outbound_node "config" "main_node" "nil"
 
 	local server_enabled
 	config_get_bool server_enabled "server" "enabled" "0"
@@ -79,7 +75,7 @@ start_service() {
 		mkdir -p "$DNSMASQ_DIR"
 		echo -e "conf-dir=$DNSMASQ_DIR" > "$DNSMASQ_DIR/../dnsmasq-homeproxy.conf"
 		case "$routing_mode" in
-		"bypass_mainland_china"|"custom"|"global")
+		"bypass_mainland_china"|"global")
 			cat <<-EOF >> "$DNSMASQ_DIR/redirect-dns.conf"
 				no-poll
 				no-resolv
@@ -92,13 +88,9 @@ start_service() {
 			sed -r -e "s/(.*)/server=\/\1\/127.0.0.1#$dns_port\nnftset=\/\1\\/4#inet#fw4#homeproxy_gfw_list_v4$gfw_nftset_v6/g" \
 				"$HP_DIR/resources/gfw_list.txt" > "$DNSMASQ_DIR/gfw_list.conf"
 			;;
-		"proxy_mainland_china")
-			sed -r -e "s/(.*)/server=\/\1\/127.0.0.1#$dns_port/g" \
-				"$HP_DIR/resources/china_list.txt" > "$DNSMASQ_DIR/china_list.conf"
-			;;
 		esac
 
-		if [ "$routing_mode" != "custom" ] && [ -s "$HP_DIR/resources/proxy_list.txt" ]; then
+		if [ -s "$HP_DIR/resources/proxy_list.txt" ]; then
 			local wan_nftset_v6
 			[ "$ipv6_support" -eq "0" ] || wan_nftset_v6=",6#inet#fw4#homeproxy_wan_proxy_addr_v6"
 			sed -r -e '/^\s*$/d' -e "s/(.*)/server=\/\1\/127.0.0.1#$dns_port\nnftset=\/\1\\/4#inet#fw4#homeproxy_wan_proxy_addr_v4$wan_nftset_v6/g" \
@@ -111,19 +103,15 @@ start_service() {
 		config_get table_mark "infra" "table_mark" "100"
 		case "$proxy_mode" in
 		"redirect_tproxy")
-			local outbound_udp_node
-			config_get outbound_udp_node "config" "main_udp_node" "nil"
-			if [ "$outbound_udp_node" != "nil" ] || [ "$routing_mode" = "custom" ]; then
-				local tproxy_mark
-				config_get tproxy_mark "infra" "tproxy_mark" "101"
+			local tproxy_mark
+			config_get tproxy_mark "infra" "tproxy_mark" "101"
 
-				ip rule add fwmark "$tproxy_mark" table "$table_mark"
-				ip route add local 0.0.0.0/0 dev lo table "$table_mark"
+			ip rule add fwmark "$tproxy_mark" table "$table_mark"
+			ip route add local 0.0.0.0/0 dev lo table "$table_mark"
 
-				if [ "$ipv6_support" -eq "1" ]; then
-					ip -6 rule add fwmark "$tproxy_mark" table "$table_mark"
-					ip -6 route add local ::/0 dev lo table "$table_mark"
-				fi
+			if [ "$ipv6_support" -eq "1" ]; then
+				ip -6 rule add fwmark "$tproxy_mark" table "$table_mark"
+				ip -6 route add local ::/0 dev lo table "$table_mark"
 			fi
 			;;
 		"redirect_tun"|"tun")
@@ -152,12 +140,13 @@ start_service() {
 		# QUIC-GO GSO is broken on kernel 6.6 currently
 		uname -r | grep -Eq "^6\.6" && procd_set_param env "QUIC_GO_DISABLE_GSO"="true"
 
-		if [ -x "/sbin/ujail" ] && [ "$routing_mode" != "custom" ] && ! grep -Eq '"type": "(wireguard|tun)"' "$RUN_DIR/sing-box-c.json"; then
+		if [ -x "/sbin/ujail" ] && ! grep -Eq '"type": "(wireguard|tun)"' "$RUN_DIR/sing-box-c.json"; then
 			procd_add_jail "sing-box-c" log procfs
 			procd_add_jail_mount "$RUN_DIR/sing-box-c.json"
 			procd_add_jail_mount_rw "$RUN_DIR/sing-box-c.log"
 			[ "$routing_mode" != "bypass_mainland_china" ] || procd_add_jail_mount_rw "$RUN_DIR/cache.db"
 			procd_add_jail_mount "$HP_DIR/certs/"
+			[ ! -d "$HP_DIR/dashboard" ] || procd_add_jail_mount "$HP_DIR/dashboard/"
 			procd_add_jail_mount "/etc/ssl/"
 			procd_add_jail_mount "/etc/localtime"
 			procd_add_jail_mount "/etc/TZ"
@@ -229,10 +218,6 @@ start_service() {
 	"bypass_mainland_china")
 		# Prepare cache db
 		[ -e "$RUN_DIR/cache.db" ] || touch "$RUN_DIR/cache.db"
-		;;
-	"custom")
-		# Prepare ruleset directory
-		[ -d "$HP_DIR/ruleset" ] || mkdir -p "$HP_DIR/ruleset"
 		;;
 	esac
 

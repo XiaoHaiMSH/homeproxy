@@ -95,6 +95,48 @@ export function strToTime(str) {
 	return !isEmpty(str) ? (str + 's') : null;
 };
 
+/* UCI lists come back as array when multiple values are set, string otherwise */
+export function normalizeList(value) {
+	if (isEmpty(value))
+		return [];
+
+	return (type(value) === 'array') ? value : [value];
+};
+
+/* Values the core models as a range: "number" or "from-to" */
+export function rangeValue(v) {
+	v = trim(v || '');
+	if (!length(v) || !match(v, /^[0-9]+(-[0-9]+)?$/))
+		return null;
+
+	return v;
+};
+
+/* XHTTP padding range, empty or "0-0" falls back to the core default */
+export function xhttpPadding(v) {
+	return (isEmpty(v) || v === '0' || v === '0-0') ? '100-1000' : v;
+};
+
+/* Parse a "Key: Value" list into a headers object */
+export function parseHeaderList(list) {
+	if (isEmpty(list))
+		return null;
+
+	let headers = {};
+	for (let line in list) {
+		let pos = index(line, ':');
+		if (pos < 0)
+			continue;
+
+		let key = trim(substr(line, 0, pos));
+		let val = trim(substr(line, pos + 1));
+		if (!isEmpty(key))
+			headers[key] = val;
+	}
+
+	return length(keys(headers)) ? headers : null;
+};
+
 export function removeBlankAttrs(res) {
 	let content;
 

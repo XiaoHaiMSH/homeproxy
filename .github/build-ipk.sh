@@ -42,6 +42,7 @@ cp -fpR "$PKG_DIR/root"/* "$TEMP_PKG_DIR/"
 
 cat > "$TEMP_PKG_DIR/lib/upgrade/keep.d/$PKG_NAME" <<-EOF
 /etc/homeproxy/certs/
+/etc/homeproxy/dashboard/
 /etc/homeproxy/ruleset/
 /etc/homeproxy/resources/direct_list.txt
 /etc/homeproxy/resources/proxy_list.txt
@@ -106,7 +107,7 @@ default_prerm' > "$TEMP_DIR/pre-deinstall"
 		--script "post-install:$TEMP_DIR/post-install" \
 		--script "post-upgrade:$TEMP_DIR/post-upgrade" \
 		--script "pre-deinstall:$TEMP_DIR/pre-deinstall" \
-		--info "depends:libc sing-box firewall4 kmod-nft-tproxy ucode-mod-digest" \
+		--info "depends:libc sing-box firewall4 flock kmod-nft-tproxy ucode-mod-digest unzip" \
 		--files "$TEMP_PKG_DIR" \
 		--output "$TEMP_DIR/${PKG_NAME}_${PKG_VERSION}.apk"
 
@@ -117,7 +118,7 @@ else
 	cat > "$TEMP_PKG_DIR/CONTROL/control" <<-EOF
 		Package: $PKG_NAME
 		Version: $PKG_VERSION
-		Depends: libc, sing-box, firewall4, kmod-nft-tproxy, ucode-mod-digest
+		Depends: libc, sing-box, firewall4, flock, kmod-nft-tproxy, ucode-mod-digest, unzip
 		Source: https://github.com/immortalwrt/homeproxy
 		SourceName: $PKG_NAME
 		Section: luci

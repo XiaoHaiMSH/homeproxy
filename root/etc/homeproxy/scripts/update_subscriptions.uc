@@ -37,12 +37,8 @@ const allow_insecure = uci.get(uciconfig, ucisubscription, 'allow_insecure') || 
       user_agent = uci.get(uciconfig, ucisubscription, 'user_agent'),
       via_proxy = uci.get(uciconfig, ucisubscription, 'update_via_proxy') || '0';
 
-const routing_mode = uci.get(uciconfig, ucimain, 'routing_mode') || 'bypass_mainalnd_china';
-let main_node, main_udp_node;
-if (routing_mode !== 'custom') {
-	main_node = uci.get(uciconfig, ucimain, 'main_node') || 'nil';
-	main_udp_node = uci.get(uciconfig, ucimain, 'main_udp_node') || 'nil';
-}
+let main_node;
+main_node = uci.get(uciconfig, ucimain, 'main_node') || 'nil';
 /* UCI config end */
 
 /* String helper start */
@@ -81,6 +77,19 @@ function log(...args) {
 
 function service_action(action) {
 	return system([ '/etc/init.d/homeproxy', action ]);
+}
+
+/* Map an XHTTP xmux object onto the xhttp_xmux_* UCI options */
+function apply_xmux(config, prefix, xmux) {
+	if (!xmux)
+		return;
+
+	config[`${prefix}_max_concurrency`] = xmux.maxConcurrency || null;
+	config[`${prefix}_max_connections`] = xmux.maxConnections || null;
+	config[`${prefix}_c_max_reuse_times`] = xmux.cMaxReuseTimes || null;
+	config[`${prefix}_h_max_request_times`] = xmux.hMaxRequestTimes || null;
+	config[`${prefix}_h_max_reusable_secs`] = xmux.hMaxReusableSecs || null;
+	config[`${prefix}_h_keep_alive_period`] = xmux.hKeepAlivePeriod || null;
 }
 
 function parse_uri(uri) {
@@ -375,6 +384,92 @@ function parse_uri(uri) {
 					config.ws_path = split(config.ws_path, '?ed=')[0];
 				}
 				break;
+			case 'xhttp':
+			case 'splithttp':
+				config.transport = 'xhttp';
+				config.xhttp_host = params.host ? urldecode(params.host) : null;
+				config.xhttp_path = params.path ? urldecode(params.path) : null;
+				config.xhttp_mode = params.mode || null;
+
+				let xhttp_extra = {};
+				if (params.extra) {
+					try {
+						xhttp_extra = json(urldecode(params.extra)) || {};
+					} catch (e) {
+						xhttp_extra = {};
+					}
+				}
+
+				config.xhttp_method = xhttp_extra.uplinkHTTPMethod || xhttp_extra.method || params.method || null;
+				config.xhttp_domain_strategy = xhttp_extra.domainStrategy || params.domainStrategy || null;
+				config.xhttp_congestion_controller = xhttp_extra.congestionController || params.congestionController || null;
+				config.xhttp_cwnd = xhttp_extra.cwnd || params.cwnd || null;
+				if (xhttp_extra.headers) {
+					config.xhttp_headers = [];
+					for (let k, v in xhttp_extra.headers)
+						push(config.xhttp_headers, sprintf('%s: %s', k, v));
+				}
+
+				config.xhttp_padding_bytes = xhttp_extra.xPaddingBytes || params.paddingBytes || null;
+				config.xhttp_no_grpc_header = (xhttp_extra.noGRPCHeader === true || params.noGRPCHeader === '1') ? '1' : null;
+				config.xhttp_sc_max_each_post_bytes = xhttp_extra.scMaxEachPostBytes || params.scMaxEachPostBytes || null;
+				config.xhttp_sc_min_posts_interval_ms = xhttp_extra.scMinPostsIntervalMs || params.scMinPostsIntervalMs || null;
+
+				config.xhttp_x_padding_obfs_mode = (xhttp_extra.xPaddingObfsMode === true) ? '1' : null;
+				config.xhttp_x_padding_placement = xhttp_extra.xPaddingPlacement || null;
+				config.xhttp_x_padding_key = xhttp_extra.xPaddingKey || null;
+				config.xhttp_x_padding_header = xhttp_extra.xPaddingHeader || null;
+				config.xhttp_x_padding_method = xhttp_extra.xPaddingMethod || null;
+
+				config.xhttp_session_placement = xhttp_extra.sessionPlacement || null;
+				config.xhttp_session_key = xhttp_extra.sessionKey || null;
+				config.xhttp_session_id_table = xhttp_extra.sessionIdTable || null;
+				config.xhttp_session_id_length = xhttp_extra.sessionIdLength || null;
+
+				config.xhttp_seq_placement = xhttp_extra.seqPlacement || null;
+				config.xhttp_seq_key = xhttp_extra.seqKey || null;
+
+				config.xhttp_uplink_data_placement = xhttp_extra.uplinkDataPlacement || null;
+				config.xhttp_uplink_data_key = xhttp_extra.uplinkDataKey || null;
+				config.xhttp_uplink_chunk_size = xhttp_extra.uplinkChunkSize || null;
+
+				if (xhttp_extra.downloadSettings || xhttp_extra.download) {
+					let dl = xhttp_extra.downloadSettings || xhttp_extra.download;
+					config.xhttp_download_host = dl.host || null;
+					config.xhttp_download_path = dl.path || null;
+					config.xhttp_download_server = dl.address || dl.server || null;
+					config.xhttp_download_server_port = dl.port || dl.server_port || null;
+					config.xhttp_download_domain_strategy = dl.domainStrategy || null;
+					config.xhttp_download_padding_bytes = dl.xPaddingBytes || null;
+					config.xhttp_download_method = dl.uplinkHTTPMethod || dl.method || null;
+					config.xhttp_download_congestion_controller = dl.congestionController || null;
+					config.xhttp_download_cwnd = dl.cwnd || null;
+					config.xhttp_download_no_grpc_header = (dl.noGRPCHeader === true) ? '1' : null;
+					if (dl.headers) {
+						config.xhttp_download_headers = [];
+						for (let k, v in dl.headers)
+							push(config.xhttp_download_headers, sprintf('%s: %s', k, v));
+					}
+					config.xhttp_download_x_padding_obfs_mode = (dl.xPaddingObfsMode === true) ? '1' : null;
+					config.xhttp_download_x_padding_placement = dl.xPaddingPlacement || null;
+					config.xhttp_download_x_padding_key = dl.xPaddingKey || null;
+					config.xhttp_download_x_padding_header = dl.xPaddingHeader || null;
+					config.xhttp_download_x_padding_method = dl.xPaddingMethod || null;
+					config.xhttp_download_session_placement = dl.sessionPlacement || null;
+					config.xhttp_download_session_key = dl.sessionKey || null;
+					config.xhttp_download_seq_placement = dl.seqPlacement || null;
+					config.xhttp_download_seq_key = dl.seqKey || null;
+					config.xhttp_download_uplink_data_placement = dl.uplinkDataPlacement || null;
+					config.xhttp_download_uplink_data_key = dl.uplinkDataKey || null;
+					config.xhttp_download_uplink_chunk_size = dl.uplinkChunkSize || null;
+					if (dl.xmux)
+						apply_xmux(config, 'xhttp_download_xmux', dl.xmux);
+				}
+
+				if (xhttp_extra.xmux)
+					apply_xmux(config, 'xhttp_xmux', xhttp_extra.xmux);
+
+				break;
 			}
 
 			break;
@@ -617,30 +712,8 @@ function main() {
 
 				log('Main node is gone, switching to the first node.');
 			}
-
-			if (!isEmpty(main_udp_node) && main_udp_node !== 'same') {
-				let main_udp_urltest_nodes;
-				if (main_udp_node === 'urltest') {
-					main_udp_urltest_nodes = filter(uci.get(uciconfig, ucimain, 'main_udp_urltest_nodes'), (v) => {
-						if (!uci.get(uciconfig, v)) {
-							log(sprintf('Node %s is gone, removing from urltest list.', v));
-							return false;
-						}
-						return true;
-					});
-				}
-
-				if ((main_udp_node === 'urltest') ? !length(main_udp_urltest_nodes) : !uci.get(uciconfig, main_udp_node)) {
-					uci.set(uciconfig, ucimain, 'main_udp_node', first_server);
-					uci.commit(uciconfig);
-					need_restart = true;
-
-					log('Main UDP node is gone, switching to the first node.');
-				}
-			}
 		} else {
 			uci.set(uciconfig, ucimain, 'main_node', 'nil');
-			uci.set(uciconfig, ucimain, 'main_udp_node', 'nil');
 			uci.commit(uciconfig);
 			need_restart = true;
 

@@ -9,14 +9,17 @@ LUCI_PKGARCH:=all
 LUCI_DEPENDS:= \
 	+sing-box \
 	+firewall4 \
+	+flock \
 	+kmod-nft-tproxy \
-	+ucode-mod-digest
+	+ucode-mod-digest \
+	+unzip
 
 PKG_NAME:=luci-app-homeproxy
 
 define Package/luci-app-homeproxy/conffiles
 /etc/config/homeproxy
 /etc/homeproxy/certs/
+/etc/homeproxy/dashboard/
 /etc/homeproxy/ruleset/
 /etc/homeproxy/resources/direct_list.txt
 /etc/homeproxy/resources/proxy_list.txt

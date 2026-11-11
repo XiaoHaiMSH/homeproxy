@@ -13,14 +13,6 @@
 'require ui';
 
 return baseclass.extend({
-	dns_strategy: {
-		'': _('Default'),
-		'prefer_ipv4': _('Prefer IPv4'),
-		'prefer_ipv6': _('Prefer IPv6'),
-		'ipv4_only': _('IPv4 only'),
-		'ipv6_only': _('IPv6 only')
-	},
-
 	shadowsocks_encrypt_length: {
 		/* AEAD */
 		'aes-128-gcm': 0,

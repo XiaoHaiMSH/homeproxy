@@ -11,8 +11,8 @@ import { writefile } from 'fs';
 import { cursor } from 'uci';
 
 import {
-	isEmpty, strToBool, strToInt, strToTime,
-	removeBlankAttrs, HP_DIR, RUN_DIR
+	isEmpty, parseHeaderList, rangeValue, strToBool, strToInt, strToTime,
+	removeBlankAttrs, xhttpPadding, HP_DIR, RUN_DIR
 } from 'homeproxy';
 
 /* UCI config start */
@@ -161,20 +161,51 @@ uci.foreach(uciconfig, uciserver, (cfg) => {
 			} : null
 		} : null,
 
-		transport: !isEmpty(cfg.transport) ? {
-			type: cfg.transport,
-			host: cfg.http_host || cfg.httpupgrade_host,
-			path: cfg.http_path || cfg.ws_path,
-			headers: cfg.ws_host ? {
-				Host: cfg.ws_host
-			} : null,
-			method: cfg.http_method,
-			max_early_data: strToInt(cfg.websocket_early_data),
-			early_data_header_name: cfg.websocket_early_data_header,
-			service_name: cfg.grpc_servicename,
-			idle_timeout: strToTime(cfg.http_idle_timeout),
-			ping_timeout: strToTime(cfg.http_ping_timeout)
-		} : null
+		transport: !isEmpty(cfg.transport) ? (() => {
+			const is_xhttp = (cfg.transport === 'xhttp');
+
+			return {
+				type: cfg.transport,
+				host: cfg.http_host || cfg.httpupgrade_host || cfg.xhttp_host,
+				path: cfg.http_path || cfg.ws_path || cfg.xhttp_path,
+				headers: cfg.ws_host ? {
+					Host: cfg.ws_host
+				} : (is_xhttp ? parseHeaderList(cfg.xhttp_headers) : null),
+				method: (cfg.transport === 'http') ? cfg.http_method : null,
+				max_early_data: strToInt(cfg.websocket_early_data),
+				early_data_header_name: cfg.websocket_early_data_header,
+				service_name: cfg.grpc_servicename,
+				idle_timeout: strToTime(cfg.http_idle_timeout),
+				ping_timeout: strToTime(cfg.http_ping_timeout),
+
+				mode: is_xhttp ? (cfg.xhttp_mode || null) : null,
+				x_padding_bytes: is_xhttp ? xhttpPadding(cfg.xhttp_padding_bytes) : null,
+				no_sse_header: is_xhttp ? strToBool(cfg.xhttp_no_sse_header) : null,
+				sc_max_each_post_bytes: is_xhttp ? rangeValue(cfg.xhttp_sc_max_each_post_bytes) : null,
+				sc_max_buffered_posts: is_xhttp ? strToInt(cfg.xhttp_sc_max_buffered_posts) : null,
+				sc_stream_up_server_secs: is_xhttp ? cfg.xhttp_sc_stream_up_server_secs : null,
+				server_max_header_bytes: is_xhttp ? strToInt(cfg.xhttp_server_max_header_bytes) : null,
+				trusted_x_forwarded_for: is_xhttp ? (cfg.xhttp_trusted_x_forwarded_for || null) : null,
+				congestion_controller: is_xhttp ? (cfg.xhttp_congestion_controller || null) : null,
+				cwnd: is_xhttp ? strToInt(cfg.xhttp_cwnd) : null,
+
+				x_padding_obfs_mode: is_xhttp ? strToBool(cfg.xhttp_x_padding_obfs_mode) : null,
+				x_padding_placement: is_xhttp ? (cfg.xhttp_x_padding_placement || null) : null,
+				x_padding_key: is_xhttp ? (cfg.xhttp_x_padding_key || null) : null,
+				x_padding_header: is_xhttp ? (cfg.xhttp_x_padding_header || null) : null,
+				x_padding_method: is_xhttp ? (cfg.xhttp_x_padding_method || null) : null,
+
+				session_placement: is_xhttp ? (cfg.xhttp_session_placement || null) : null,
+				session_key: is_xhttp ? (cfg.xhttp_session_key || null) : null,
+
+				seq_placement: is_xhttp ? (cfg.xhttp_seq_placement || null) : null,
+				seq_key: is_xhttp ? (cfg.xhttp_seq_key || null) : null,
+
+				uplink_data_placement: is_xhttp ? (cfg.xhttp_uplink_data_placement || null) : null,
+				uplink_data_key: is_xhttp ? (cfg.xhttp_uplink_data_key || null) : null,
+				uplink_chunk_size: is_xhttp ? (cfg.xhttp_uplink_chunk_size || null) : null
+			};
+		})() : null
 	});
 });
 

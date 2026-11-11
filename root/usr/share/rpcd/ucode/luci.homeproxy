@@ -8,6 +8,7 @@
 'use strict';
 
 import { access, error, lstat, popen, readfile, writefile } from 'fs';
+import { cursor } from 'uci';
 
 /* Kanged from ucode/luci */
 function shellquote(s) {
@@ -20,6 +21,37 @@ function hasKernelModule(kmod) {
 
 const HP_DIR = '/etc/homeproxy';
 const RUN_DIR = '/var/run/homeproxy';
+
+/* the API query spawns a client, do not do it for every caller */
+const CURRENT_NODE_CACHE = RUN_DIR + '/current_node.json';
+const CURRENT_NODE_TTL = 8;
+
+/*
+ * Outbound tags are derived from the node labels, keep in sync with
+ * generate_client.uc.
+ */
+function nodeTagMap(uci) {
+	const reserved = {
+		'direct-out': true,
+		'block-out': true,
+		'main-out': true,
+		'main-udp-out': true
+	};
+	const tags = {};
+
+	uci.foreach('homeproxy', 'node', (cfg) => {
+		const base = trim(cfg.label || '') || cfg['.name'];
+		let tag = base, suffix = 2;
+
+		while (reserved[tag])
+			tag = `${base} (${suffix++})`;
+
+		reserved[tag] = true;
+		tags[cfg['.name']] = tag;
+	});
+
+	return tags;
+}
 
 const methods = {
 	acllist_read: {
@@ -203,6 +235,122 @@ const methods = {
 		}
 	},
 
+	current_node_get: {
+		call: function() {
+			const uci = cursor();
+			uci.load('homeproxy');
+
+			const main_node = trim(uci.get('homeproxy', 'config', 'main_node') || 'nil');
+
+			if (!length(main_node) || main_node === 'nil')
+				return { mode: 'nil', active: null, error: null };
+
+			const nodeInfo = (id) => {
+				const cfg = uci.get_all('homeproxy', id);
+
+				if (!cfg || cfg['.type'] !== 'node')
+					return { id, label: id, type: null };
+
+				const label = trim(cfg.label || '');
+				const address = trim(cfg.address || '');
+
+				return {
+					id,
+					label: label || ((address && cfg.port) ? `${address}:${cfg.port}` : id),
+					type: cfg.type || null
+				};
+			};
+
+			if (main_node !== 'urltest')
+				return { mode: 'node', active: nodeInfo(main_node), error: null };
+
+			const cache_stat = lstat(CURRENT_NODE_CACHE);
+			if (cache_stat && cache_stat.type === 'file' &&
+			    (time() - cache_stat.mtime) < CURRENT_NODE_TTL) {
+				let cached = null;
+
+				try {
+					cached = json(readfile(CURRENT_NODE_CACHE));
+				} catch (e) { cached = null; }
+
+				if (cached)
+					return cached;
+			}
+
+			/* URLTest: ask the sing-box API which outbound is currently used */
+			const port = int(uci.get('homeproxy', 'config', 'dashboard_port')) || 9096;
+			const secret = uci.get('homeproxy', 'config', 'dashboard_secret') || '';
+
+			let output = '';
+			const fd = popen(sprintf(
+				'BOX_API_URL=%s BOX_API_SECRET=%s %s api group show %s 2>"/dev/null"',
+				shellquote(`http://127.0.0.1:${port}`),
+				shellquote(secret),
+				shellquote('/usr/bin/sing-box'),
+				shellquote('main-out')
+			));
+
+			if (!fd)
+				return { mode: 'urltest', active: null, error: 'api_unavailable' };
+
+			for (let line = fd.read('line'); length(line); line = fd.read('line'))
+				output += line + '\n';
+
+			fd.close();
+
+			/* the "Selected: <tag>" line is followed by a TAG/TYPE/DELAY table */
+			let tag = null, delay = null;
+
+			for (let raw in split(output, '\n')) {
+				const line = trim(raw);
+
+				if (!length(line))
+					continue;
+
+				if (tag === null) {
+					const selected = match(line, /^Selected:[ \t]+(.+)$/);
+
+					if (selected)
+						tag = trim(selected[1]);
+
+					continue;
+				}
+
+				/* the table rows are tab separated: TAG, TYPE, DELAY */
+				const fields = split(line, '\t');
+
+				if (length(fields) >= 2 && fields[0] === tag) {
+					delay = (length(fields) >= 3) ? trim(fields[2]) : null;
+					break;
+				}
+			}
+
+			if (tag === null)
+				return { mode: 'urltest', active: null, error: 'api_unavailable' };
+
+			const tags = nodeTagMap(uci);
+			let id = null;
+
+			for (let node, node_tag in tags) {
+				if (node_tag === tag) {
+					id = node;
+					break;
+				}
+			}
+
+			const result = {
+				mode: 'urltest',
+				active: id ? nodeInfo(id) : { id: null, label: tag, type: null },
+				delay,
+				error: null
+			};
+
+			writefile(CURRENT_NODE_CACHE, sprintf('%.J', result));
+
+			return result;
+		}
+	},
+
 	singbox_get_features: {
 		call: function() {
 			let features = {};
@@ -234,19 +382,27 @@ const methods = {
 	resources_get_version: {
 		args: { type: 'type' },
 		call: function(req) {
-			const version = trim(readfile(`${HP_DIR}/resources/${req.args?.type}.ver`));
+			const type = req.args?.type;
+			if (!(type in ['china_ip4', 'china_ip6', 'gfw_list', 'dashboard']))
+				return { version: null, error: 'illegal type' };
+
+			/* The dashboard keeps its version file in its own directory */
+			const versionfile = (type === 'dashboard') ?
+				`${HP_DIR}/dashboard/dashboard.ver` : `${HP_DIR}/resources/${type}.ver`;
+
+			const version = trim(readfile(versionfile));
 			return { version: version, error: error() };
 		}
 	},
 	resources_update: {
 		args: { type: 'type' },
 		call: function(req) {
-			if (req.args?.type) {
-				const type = shellquote(req.args?.type);
-				const exit_code = system(`${HP_DIR}/scripts/update_resources.sh ${type}`);
-				return { status: exit_code };
-			} else
+			const type = req.args?.type;
+			if (!(type in ['china_ip4', 'china_ip6', 'gfw_list', 'dashboard']))
 				return { status: 255, error: 'illegal type' };
+
+			const exit_code = system(`${HP_DIR}/scripts/update_resources.sh ${shellquote(type)}`);
+			return { status: exit_code };
 		}
 	}
 };
