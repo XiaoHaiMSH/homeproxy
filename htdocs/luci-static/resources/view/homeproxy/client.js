@@ -84,6 +84,23 @@ function getServiceStatus() {
 	});
 }
 
+/*
+ * The measured delay is coloured by latency so a bad node stands out:
+ * below 800 ms green, below 1500 ms amber, everything above red. The tones
+ * are the 600 shades of the palette, they stay legible on light and dark
+ * themes alike.
+ */
+function renderDelay(delay) {
+	const ms = parseInt(String(delay || '').replace(/[^0-9]/g, ''), 10);
+
+	if (isNaN(ms))
+		return '';
+
+	const color = (ms >= 1500) ? '#dc2626' : (ms >= 800) ? '#d97706' : '#16a34a';
+
+	return ' (<span style="color:%s;font-weight:bold">%h</span>)'.format(color, delay);
+}
+
 function renderStatus(isRunning, version, node) {
 	let spanTemp = '<em><span style="color:%s"><strong>%s (sing-box v%s) %s</strong></span></em>';
 	let renderHTML;
@@ -95,9 +112,8 @@ function renderStatus(isRunning, version, node) {
 	if (!isRunning || !node || !node.active)
 		return renderHTML;
 
-	const delay = (node.delay && node.delay !== '-') ? ' (%h)'.format(node.delay) : '';
 	renderHTML += '<br/><span style="font-size:0.9em">%s: <strong>%h</strong>%s</span>'
-		.format(_('Current node'), node.active.label, delay);
+		.format(_('Current node'), node.active.label, renderDelay(node.delay));
 
 	return renderHTML;
 }
