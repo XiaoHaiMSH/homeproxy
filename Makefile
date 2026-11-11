@@ -20,6 +20,7 @@ define Package/luci-app-homeproxy/conffiles
 /etc/config/homeproxy
 /etc/homeproxy/certs/
 /etc/homeproxy/dashboard/
+/etc/homeproxy/tailscale/
 /etc/homeproxy/ruleset/
 /etc/homeproxy/resources/direct_list.txt
 /etc/homeproxy/resources/proxy_list.txt

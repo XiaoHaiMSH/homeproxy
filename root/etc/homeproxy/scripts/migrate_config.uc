@@ -11,6 +11,7 @@
  *     together with its rule, DNS and rule set editors
  *   - one node (or URLTest group) carries both TCP and UDP now
  *   - DNS fallback servers, the dashboard and the TUN stack option are new
+ *   - the Tailscale endpoint was introduced
  */
 
 'use strict';
@@ -63,6 +64,14 @@ if (isEmpty(uci.get(uciconfig, ucimain, 'dashboard_port')))
 	uci.set(uciconfig, ucimain, 'dashboard_port', '9096');
 if (uci.get(uciconfig, ucimain, 'dashboard_secret') === null)
 	uci.set(uciconfig, ucimain, 'dashboard_secret', '');
+
+/* the Tailscale endpoint was introduced */
+if (isEmpty(uci.get(uciconfig, 'tailscale')))
+	uci.set(uciconfig, 'tailscale', 'homeproxy');
+
+for (let option in [ 'enabled', 'accept_routes', 'exit_node_allow_lan_access', 'advertise_exit_node' ])
+	if (uci.get(uciconfig, 'tailscale', option) === null)
+		uci.set(uciconfig, 'tailscale', option, '0');
 
 /* drop the leftovers of the removed custom routing mode */
 for (let section in [ 'routing', 'dns' ])

@@ -5,6 +5,7 @@
  */
 
 'use strict';
+'require dom';
 'require form';
 'require network';
 'require poll';
@@ -43,6 +44,35 @@ const callCurrentNode = rpc.declare({
 	method: 'current_node_get',
 	expect: { '': {} }
 });
+
+const callTailscaleStatus = rpc.declare({
+	object: 'luci.homeproxy',
+	method: 'tailscale_status',
+	expect: { '': {} }
+});
+
+function renderTailscaleStatus(status) {
+	if (status?.state === 'Running')
+		return E('span', {}, [
+			E('span', { 'class': 'label success' }, _('Connected')),
+			status.network ? E('span', {}, ' (' + status.network + ')') : ''
+		]);
+	if (status?.state === 'disabled')
+		return E('span', {}, _('Save and apply to enable Tailscale.'));
+	if (status?.auth_url) {
+		try {
+			const url = new URL(status.auth_url);
+			if (['http:', 'https:'].includes(url.protocol) && url.hostname && !url.username && !url.password)
+				return E('a', { 'class': 'cbi-button cbi-button-action', href: url.href,
+					target: '_blank', rel: 'noopener noreferrer' }, _('Log in to Tailscale'));
+		} catch (e) { }
+	}
+	if (status?.state === 'NeedsMachineAuth')
+		return E('span', {}, _('Approve this device in the Tailscale admin console.'));
+	if (status?.state === 'NeedsLogin' || status?.state === 'NoState')
+		return E('span', {}, _('Waiting for the login link. Check the control server connection if it does not appear.'));
+	return E('span', {}, _('Tailscale status is unavailable. Save and apply, then check that the client is running.'));
+}
 
 function getServiceStatus() {
 	return L.resolveDefault(callServiceList('homeproxy'), {}).then((res) => {
@@ -455,6 +485,7 @@ return view.extend({
 		so.value('urltest', _('Separate URLTest'));
 		so.value('direct-out', _('Direct'));
 		so.value('reject-out', _('Reject'));
+		so.value('tailscale', _('[Tailscale] Tailscale'));
 		for (let i in proxy_nodes)
 			so.value(i, proxy_nodes[i]);
 		so.default = 'main-out';
@@ -493,6 +524,158 @@ return view.extend({
 		so.modalonly = true;
 		so.retain = true;
 		/* Application routing end */
+
+		/* Tailscale settings start */
+		s.tab('tailscale', _('Tailscale'));
+
+		o = s.taboption('tailscale', form.SectionValue, '_tailscale', form.NamedSection,
+			'tailscale', 'homeproxy');
+		ss = o.subsection;
+
+		so = ss.option(form.Flag, 'enabled', _('Enable Tailscale'),
+			_('Join the router to a Tailscale network through the sing-box endpoint. Unlike the proxy nodes it works without a main node; LAN clients can only reach the tailnet while the transparent proxy is running. MagicDNS is delivered to the LAN in the "Bypass mainland China" and "Global" routing modes only.'));
+		so.default = so.disabled;
+		so.rmempty = false;
+
+		so = ss.option(form.DummyValue, '_tailscale_build', _('Build support'));
+		so.depends('enabled', '1');
+		so.renderWidget = function() {
+			const version = String((features && features.version) || '').match(/^(\d+)\.(\d+)/),
+			      new_enough = version &&
+				((+version[1] > 1) || (+version[1] === 1 && +version[2] >= 14));
+
+			if (version && !new_enough)
+				return E('span', { style: 'color:#ff4d4f' },
+					_('The Tailscale endpoint needs sing-box 1.14 or newer, update the core first.'));
+
+			if (!(features && features.with_tailscale))
+				return E('span', { style: 'color:#ff4d4f' },
+					_('The running sing-box build does not include Tailscale support (with_tailscale), the endpoint cannot start.'));
+
+			return E('span', {}, _('The running sing-box build includes Tailscale support.'));
+		};
+
+		so = ss.option(form.Value, 'auth_key', _('Authentication key'),
+			_('Only used when the node is created for the first time. Leave it empty to sign in with the login link below.'));
+		so.password = true;
+		so.rmempty = true;
+		so.retain = true;
+		so.depends('enabled', '1');
+
+		so = ss.option(form.DummyValue, '_tailscale_status', _('Login status'));
+		so.depends('enabled', '1');
+		so.renderWidget = function() {
+			const container = E('div', {}, _('Collecting data...'));
+
+			const refresh = () => L.resolveDefault(callTailscaleStatus(), {}).then((status) => {
+				dom.content(container, renderTailscaleStatus(status));
+			});
+
+			/* drop the previous closure, a re-render would keep polling it */
+			if (this.statusRefresh)
+				poll.remove(this.statusRefresh);
+
+			this.statusRefresh = refresh;
+			poll.add(refresh, 5);
+			refresh();
+
+			return container;
+		};
+
+		so = ss.option(form.Value, 'control_url', _('Control server'),
+			_('Coordination server URL. Leave it empty to use the official Tailscale service.'));
+		so.placeholder = 'https://controlplane.tailscale.com';
+		so.rmempty = true;
+		so.retain = true;
+		so.depends('enabled', '1');
+		so.validate = function(_section_id, value) {
+			if (!value)
+				return true;
+
+			try {
+				const url = new URL(value);
+				return (url.hostname && ['http:', 'https:'].includes(url.protocol)) ||
+					_('Expecting: %s').format(_('valid URL'));
+			} catch (e) {
+				return _('Expecting: %s').format(_('valid URL'));
+			}
+		};
+
+		so = ss.option(form.Value, 'hostname', _('Hostname'),
+			_('The device name shown in the Tailscale network. The system hostname is used when empty.'));
+		so.datatype = 'hostname';
+		so.rmempty = true;
+		so.retain = true;
+		so.depends('enabled', '1');
+
+		so = ss.option(form.Flag, 'accept_routes', _('Accept routes'),
+			_('Accept subnet routes advertised by other Tailscale nodes.'));
+		so.default = so.disabled;
+		so.rmempty = false;
+		so.retain = true;
+		so.depends('enabled', '1');
+
+		so = ss.option(form.Value, 'exit_node', _('Exit node'),
+			_('Exit node name or IP address. Used as the default route once the exit node is approved.'));
+		so.rmempty = true;
+		so.retain = true;
+		so.depends('enabled', '1');
+		so.validate = function(section_id, value) {
+			if (!value)
+				return true;
+
+			if (this.section.formvalue(section_id, 'advertise_exit_node') === '1')
+				return _('An exit node cannot be used and advertised at the same time.');
+
+			return stubValidator.apply('hostname', value) ||
+				stubValidator.apply('ip4addr', value) ||
+				stubValidator.apply('ip6addr', value) ||
+				_('Expecting: %s').format(_('valid hostname or IP address'));
+		};
+
+		so = ss.option(form.Flag, 'exit_node_allow_lan_access', _('Allow LAN access with exit node'),
+			_('Keep locally reachable subnets outside the selected exit node.'));
+		so.default = so.disabled;
+		so.rmempty = false;
+		so.retain = true;
+		so.depends('enabled', '1');
+
+		so = ss.option(form.DynamicList, 'advertise_routes', _('Advertised routes'),
+			_('LAN subnets advertised as reachable through this router. Every route must also be approved on the coordination server.'));
+		so.rmempty = true;
+		so.retain = true;
+		so.depends('enabled', '1');
+		so.validate = function(_section_id, value) {
+			/* Validate here, the CIDR datatype would replace the value by its prefix length */
+			if (value && !stubValidator.apply('cidr', value))
+				return _('Expecting: %s').format(_('valid network in CIDR notation'));
+
+			if (value === '0.0.0.0/0' || value === '::/0')
+				return _('Use "Advertise as exit node" instead of a default route.');
+
+			return true;
+		};
+
+		so = ss.option(form.Flag, 'advertise_exit_node', _('Advertise as exit node'),
+			_('Advertise this router as an exit node. It still has to be approved on the coordination server.'));
+		so.default = so.disabled;
+		so.rmempty = false;
+		so.retain = true;
+		so.depends('enabled', '1');
+		so.validate = function(section_id, value) {
+			if (value === '1' && this.section.formvalue(section_id, 'exit_node'))
+				return _('An exit node cannot be used and advertised at the same time.');
+
+			return true;
+		};
+
+		so = ss.option(form.Value, 'listen_port', _('Listen port'),
+			_('UDP port used for WireGuard and peer-to-peer traffic. A port is chosen automatically when empty.'));
+		so.datatype = 'port';
+		so.rmempty = true;
+		so.retain = true;
+		so.depends('enabled', '1');
+		/* Tailscale settings end */
 
 		/* Dashboard settings start */
 		s.tab('dashboard', _('Dashboard'));

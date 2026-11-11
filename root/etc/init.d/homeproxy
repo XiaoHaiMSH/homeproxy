@@ -40,13 +40,22 @@ start_service() {
 	local server_enabled
 	config_get_bool server_enabled "server" "enabled" "0"
 
-	if [ "$outbound_node" = "nil" ] && [ "$server_enabled" = "0" ]; then
+	local tailscale_enabled
+	config_get_bool tailscale_enabled "tailscale" "enabled" "0"
+
+	if [ "$outbound_node" = "nil" ] && [ "$server_enabled" = "0" ] && [ "$tailscale_enabled" = "0" ]; then
 		return 1
 	fi
 
 	mkdir -p "$RUN_DIR"
 
-	if [ "$outbound_node" != "nil" ]; then
+	# Tailscale endpoint state (sing-box runs as the sing-box user inside ujail)
+	if [ "$tailscale_enabled" = "1" ]; then
+		mkdir -p "$HP_DIR/tailscale/taildrop"
+		chown -R sing-box:sing-box "$HP_DIR/tailscale" 2>"/dev/null"
+	fi
+
+	if [ "$outbound_node" != "nil" ] || [ "$tailscale_enabled" = "1" ]; then
 		# Generate/Validate client config
 		ucode -S "$HP_DIR/scripts/generate_client.uc" 2>>"$LOG_PATH"
 
@@ -140,7 +149,8 @@ start_service() {
 		# QUIC-GO GSO is broken on kernel 6.6 currently
 		uname -r | grep -Eq "^6\.6" && procd_set_param env "QUIC_GO_DISABLE_GSO"="true"
 
-		if [ -x "/sbin/ujail" ] && ! grep -Eq '"type": "(wireguard|tun)"' "$RUN_DIR/sing-box-c.json"; then
+		# endpoints and TUN need direct access to the network and their state
+		if [ -x "/sbin/ujail" ] && ! grep -Eq '"type": "(wireguard|tun|tailscale)"' "$RUN_DIR/sing-box-c.json"; then
 			procd_add_jail "sing-box-c" log procfs
 			procd_add_jail_mount "$RUN_DIR/sing-box-c.json"
 			procd_add_jail_mount_rw "$RUN_DIR/sing-box-c.log"
@@ -221,7 +231,7 @@ start_service() {
 		;;
 	esac
 
-	[ "$outbound_node" = "nil" ] || echo > "$RUN_DIR/sing-box-c.log"
+	{ [ "$outbound_node" = "nil" ] && [ "$tailscale_enabled" = "0" ]; } || echo > "$RUN_DIR/sing-box-c.log"
 	if [ "$server_enabled" = "1" ]; then
 		echo > "$RUN_DIR/sing-box-s.log"
 		mkdir -p "$HP_DIR/certs"

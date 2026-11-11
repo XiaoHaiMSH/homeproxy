@@ -29,7 +29,8 @@ uci.load(uciconfig);
 
 const uciinfra = 'infra',
       ucimain = 'config',
-      ucicontrol = 'control';
+      ucicontrol = 'control',
+      ucitalscale = 'tailscale';
 
 const ucinode = 'node';
 const uciapprule = 'app_rule';
@@ -151,6 +152,32 @@ const dashboard_path = HP_DIR + '/dashboard';
 const dashboard_enabled = !isEmpty(readfile(dashboard_path + '/index.html')),
       dashboard_port = strToInt(uci.get(uciconfig, ucimain, 'dashboard_port')) || 9096,
       dashboard_secret = uci.get(uciconfig, ucimain, 'dashboard_secret');
+
+/*
+ * Tailscale endpoint (sing-box >= 1.14). The endpoint works on its own, a main
+ * node is not required: the router simply joins the tailnet and the traffic of
+ * the tailnet peers is left untouched by the proxy.
+ */
+const tailscale_tag = 'tailscale-out';
+const tailscale_enabled = uci.get(uciconfig, ucitalscale, 'enabled') === '1';
+const tailscale_auth_key = uci.get(uciconfig, ucitalscale, 'auth_key');
+const tailscale_control_url = uci.get(uciconfig, ucitalscale, 'control_url');
+const tailscale_hostname = uci.get(uciconfig, ucitalscale, 'hostname');
+const tailscale_accept_routes = uci.get(uciconfig, ucitalscale, 'accept_routes') === '1';
+const tailscale_exit_node = uci.get(uciconfig, ucitalscale, 'exit_node');
+const tailscale_exit_node_allow_lan_access =
+	uci.get(uciconfig, ucitalscale, 'exit_node_allow_lan_access') === '1';
+const tailscale_advertise_routes = normalizeList(uci.get(uciconfig, ucitalscale, 'advertise_routes'));
+const tailscale_listen_port = uci.get(uciconfig, ucitalscale, 'listen_port');
+
+let tailscale_advertise_exit_node = uci.get(uciconfig, ucitalscale, 'advertise_exit_node') === '1';
+
+/* A node cannot use an exit node and advertise itself as one at the same time,
+   keep the service running and drop the advertisement instead of failing. */
+if (tailscale_enabled && !isEmpty(tailscale_exit_node) && tailscale_advertise_exit_node) {
+	warn('Tailscale: an exit node cannot be used and advertised at the same time, disabling the advertisement.\n');
+	tailscale_advertise_exit_node = false;
+}
 /* UCI config end */
 
 /*
@@ -161,7 +188,8 @@ const dashboard_enabled = !isEmpty(readfile(dashboard_path + '/index.html')),
 const reserved_out_tags = {
 	'direct-out': true,
 	'block-out': true,
-	'main-out': true
+	'main-out': true,
+	'tailscale-out': true
 };
 const node_out_tags = {};
 
@@ -583,6 +611,25 @@ function push_dns_server_with_fallback(tag, server_addr, default_protocol, fallb
 	});
 }
 
+if (tailscale_enabled) {
+	/* MagicDNS: the tailscale DNS server only answers tailnet hosts, the rule
+	   has to be evaluated before every other DNS rule */
+	push(config.dns.servers, {
+		type: 'tailscale',
+		tag: 'tailscale-dns',
+		endpoint: tailscale_tag
+	});
+	push(config.dns.rules, {
+		preferred_by: 'tailscale-dns',
+		action: 'route',
+		server: 'tailscale-dns'
+	});
+
+	/* the endpoint also works without a proxy node */
+	if (isEmpty(main_node))
+		config.dns.final = 'default-dns';
+}
+
 if (!isEmpty(main_node)) {
 	/* Main DNS */
 	push_dns_server_with_fallback('main-dns', dns_server, 'tcp', dns_server_fallback, main_out_tag,
@@ -695,6 +742,25 @@ if (match(proxy_mode, /tun/))
 
 /* Outbound start */
 config.endpoints = [];
+
+/* Tailscale endpoint */
+if (tailscale_enabled)
+	push(config.endpoints, {
+		type: 'tailscale',
+		tag: tailscale_tag,
+		state_directory: HP_DIR + '/tailscale',
+		taildrop_directory: HP_DIR + '/tailscale/taildrop',
+		auth_key: tailscale_auth_key,
+		control_url: tailscale_control_url,
+		hostname: tailscale_hostname,
+		accept_routes: tailscale_accept_routes,
+		exit_node: tailscale_exit_node,
+		exit_node_allow_lan_access: !isEmpty(tailscale_exit_node) ?
+			tailscale_exit_node_allow_lan_access : null,
+		advertise_routes: length(tailscale_advertise_routes) ? tailscale_advertise_routes : null,
+		advertise_exit_node: tailscale_advertise_exit_node,
+		listen_port: strToInt(tailscale_listen_port)
+	});
 
 /* Default outbounds */
 config.outbounds = [
@@ -811,6 +877,9 @@ function app_rule_outbound(cfg) {
 		return 'direct-out';
 	case 'reject-out':
 		return 'block-out';
+	case 'tailscale':
+		/* the endpoint is optional, fall back to the main node when it is off */
+		return tailscale_enabled ? tailscale_tag : main_out_tag;
 	case 'urltest':
 		const nodes = valid_node_list(cfg.urltest_nodes);
 
@@ -871,6 +940,26 @@ config.route.default_domain_resolver = {
 		'china-dns' : 'default-dns',
 	strategy: (ipv6_support !== '1') ? 'prefer_ipv4' : null
 };
+
+/* Tailscale routing: traffic coming from the tailnet is never re-proxied, and
+   the connections that belong to the tailnet (MagicDNS names and peer
+   addresses) are sent to the endpoint before any other rule can claim them. */
+if (tailscale_enabled) {
+	push(config.route.rules, {
+		inbound: tailscale_tag,
+		action: 'route',
+		outbound: 'direct-out'
+	});
+	push(config.route.rules, {
+		preferred_by: tailscale_tag,
+		action: 'route',
+		outbound: tailscale_tag
+	});
+
+	/* the endpoint also works without a proxy node */
+	if (isEmpty(main_node))
+		config.route.final = 'direct-out';
+}
 
 /* Routing rules */
 if (!isEmpty(main_node)) {
@@ -1085,8 +1174,9 @@ if (!isEmpty(main_node)) {
 }
 /* Experimental end */
 
-/* API service: serves the dashboard and answers the API queries */
-const api_console_enabled = dashboard_enabled || main_node === 'urltest';
+/* API service: serves the dashboard and answers the API queries, the Tailscale
+   login state is queried through it as well */
+const api_console_enabled = dashboard_enabled || main_node === 'urltest' || tailscale_enabled;
 
 if (api_console_enabled)
 	config.services = [

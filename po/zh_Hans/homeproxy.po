@@ -2868,6 +2868,146 @@ msgstr "有效端口值"
 msgid "valid uuid"
 msgstr "有效 uuid"
 
+#: htdocs/luci-static/resources/view/homeproxy/client.js
+msgid "[Tailscale] Tailscale"
+msgstr "[Tailscale] Tailscale"
+
+#: htdocs/luci-static/resources/view/homeproxy/client.js
+msgid "Accept routes"
+msgstr "接受路由"
+
+#: htdocs/luci-static/resources/view/homeproxy/client.js
+msgid "Accept subnet routes advertised by other Tailscale nodes."
+msgstr "接受其他 Tailscale 节点通告的子网路由。"
+
+#: htdocs/luci-static/resources/view/homeproxy/client.js
+msgid "Advertise as exit node"
+msgstr "通告为出口节点"
+
+#: htdocs/luci-static/resources/view/homeproxy/client.js
+msgid "Advertise this router as an exit node. It still has to be approved on the coordination server."
+msgstr "将此路由器通告为出口节点，仍需在协调服务器上批准。"
+
+#: htdocs/luci-static/resources/view/homeproxy/client.js
+msgid "Advertised routes"
+msgstr "通告路由"
+
+#: htdocs/luci-static/resources/view/homeproxy/client.js
+msgid "Allow LAN access with exit node"
+msgstr "出口节点下允许访问局域网"
+
+#: htdocs/luci-static/resources/view/homeproxy/client.js
+msgid "An exit node cannot be used and advertised at the same time."
+msgstr "不能同时使用和通告出口节点。"
+
+#: htdocs/luci-static/resources/view/homeproxy/client.js
+msgid "Approve this device in the Tailscale admin console."
+msgstr "请在 Tailscale 管理后台批准此设备。"
+
+#: htdocs/luci-static/resources/view/homeproxy/client.js
+msgid "Authentication key"
+msgstr "认证密钥"
+
+#: htdocs/luci-static/resources/view/homeproxy/client.js
+msgid "Connected"
+msgstr "已连接"
+
+#: htdocs/luci-static/resources/view/homeproxy/client.js
+msgid "Control server"
+msgstr "控制服务器"
+
+#: htdocs/luci-static/resources/view/homeproxy/client.js
+msgid "Coordination server URL. Leave it empty to use the official Tailscale service."
+msgstr "协调服务器地址。留空则使用 Tailscale 官方服务。"
+
+#: htdocs/luci-static/resources/view/homeproxy/client.js
+msgid "Exit node"
+msgstr "出口节点"
+
+#: htdocs/luci-static/resources/view/homeproxy/client.js
+msgid "Exit node name or IP address. Used as the default route once the exit node is approved."
+msgstr "出口节点名称或 IP 地址。出口节点通过审批后将作为默认路由。"
+
+#: htdocs/luci-static/resources/view/homeproxy/client.js
+msgid "Hostname"
+msgstr "主机名"
+
+#: htdocs/luci-static/resources/view/homeproxy/client.js
+msgid "Join the router to a Tailscale network through the sing-box endpoint. Unlike the proxy nodes it works without a main node; LAN clients can only reach the tailnet while the transparent proxy is running. MagicDNS is delivered to the LAN in the \"Bypass mainland China\" and \"Global\" routing modes only."
+msgstr "通过 sing-box endpoint 将路由器加入 Tailscale 网络。与代理节点不同，它不需要主节点；只有在透明代理运行时，局域网设备才能访问 tailnet。MagicDNS 仅在「绕过中国大陆」和「全局」路由模式下对局域网生效。"
+
+#: htdocs/luci-static/resources/view/homeproxy/client.js
+msgid "Keep locally reachable subnets outside the selected exit node."
+msgstr "使本地可达的子网不经过所选出口节点。"
+
+#: htdocs/luci-static/resources/view/homeproxy/client.js
+msgid "LAN subnets advertised as reachable through this router. Every route must also be approved on the coordination server."
+msgstr "通过此路由器可访问的局域网子网。每条路由还需在协调服务器上批准。"
+
+#: htdocs/luci-static/resources/view/homeproxy/client.js
+msgid "Log in to Tailscale"
+msgstr "登录 Tailscale"
+
+#: htdocs/luci-static/resources/view/homeproxy/client.js
+msgid "Login status"
+msgstr "登录状态"
+
+#: htdocs/luci-static/resources/view/homeproxy/client.js
+msgid "Only used when the node is created for the first time. Leave it empty to sign in with the login link below."
+msgstr "仅在首次创建节点时使用。留空则通过下方的登录链接登录。"
+
+#: htdocs/luci-static/resources/view/homeproxy/client.js
+msgid "Save and apply to enable Tailscale."
+msgstr "保存并应用后启用 Tailscale。"
+
+#: htdocs/luci-static/resources/view/homeproxy/client.js
+msgid "Tailscale"
+msgstr "Tailscale"
+
+#: htdocs/luci-static/resources/view/homeproxy/client.js
+msgid "Tailscale status is unavailable. Save and apply, then check that the client is running."
+msgstr "无法获取 Tailscale 状态。请保存并应用，然后确认客户端正在运行。"
+
+#: htdocs/luci-static/resources/view/homeproxy/client.js
+msgid "The device name shown in the Tailscale network. The system hostname is used when empty."
+msgstr "在 Tailscale 网络中显示的设备名。留空则使用系统主机名。"
+
+#: htdocs/luci-static/resources/view/homeproxy/client.js
+msgid "The running sing-box build does not include Tailscale support (with_tailscale), the endpoint cannot start."
+msgstr "当前运行的 sing-box 未包含 Tailscale 支持（with_tailscale），endpoint 无法启动。"
+
+#: htdocs/luci-static/resources/view/homeproxy/client.js
+msgid "The running sing-box build includes Tailscale support."
+msgstr "当前运行的 sing-box 已包含 Tailscale 支持。"
+
+#: htdocs/luci-static/resources/view/homeproxy/client.js
+msgid "UDP port used for WireGuard and peer-to-peer traffic. A port is chosen automatically when empty."
+msgstr "用于 WireGuard 和点对点流量的 UDP 端口。留空则自动选择。"
+
+#: htdocs/luci-static/resources/view/homeproxy/client.js
+msgid "Use \"Advertise as exit node\" instead of a default route."
+msgstr "请使用「通告为出口节点」而不是默认路由。"
+
+#: htdocs/luci-static/resources/view/homeproxy/client.js
+msgid "Waiting for the login link. Check the control server connection if it does not appear."
+msgstr "正在等待登录链接。若长时间未出现，请检查控制服务器连接。"
+
+#: htdocs/luci-static/resources/view/homeproxy/client.js
+msgid "valid hostname or IP address"
+msgstr "有效的主机名或 IP 地址"
+
+#: htdocs/luci-static/resources/view/homeproxy/client.js
+msgid "valid network in CIDR notation"
+msgstr "有效的 CIDR 网络"
+
+#: htdocs/luci-static/resources/view/homeproxy/client.js
+msgid "Build support"
+msgstr "构建支持"
+
+#: htdocs/luci-static/resources/view/homeproxy/client.js
+msgid "The Tailscale endpoint needs sing-box 1.14 or newer, update the core first."
+msgstr "Tailscale endpoint 需要 sing-box 1.14 或更高版本，请先升级内核。"
+
 #~ msgid "China list version"
 #~ msgstr "国内域名列表版本"
 

@@ -35,7 +35,8 @@ function nodeTagMap(uci) {
 		'direct-out': true,
 		'block-out': true,
 		'main-out': true,
-		'main-udp-out': true
+		'main-udp-out': true,
+		'tailscale-out': true
 	};
 	const tags = {};
 
@@ -376,6 +377,72 @@ const methods = {
 			features.hp_has_tun = hasKernelModule('tun.ko') || access('/etc/modules.d/30-tun');
 
 			return features;
+		}
+	},
+
+	tailscale_status: {
+		call: function() {
+			const uci = cursor();
+			uci.load('homeproxy');
+
+			if (uci.get('homeproxy', 'tailscale', 'enabled') !== '1')
+				return { state: 'disabled' };
+
+			const port = int(uci.get('homeproxy', 'config', 'dashboard_port')) || 9096;
+			const secret = uci.get('homeproxy', 'config', 'dashboard_secret') || '';
+
+			const fd = popen(sprintf(
+				'BOX_API_URL=%s BOX_API_SECRET=%s %s api tailscale status 2>"/dev/null"',
+				shellquote(`http://127.0.0.1:${port}`),
+				shellquote(secret),
+				shellquote('/usr/bin/sing-box')
+			));
+
+			if (!fd)
+				return { state: 'unavailable' };
+
+			let output = '';
+
+			for (let line = fd.read('line'); length(line); line = fd.read('line'))
+				output += line + '\n';
+
+			fd.close();
+
+			/*
+			 * One block per endpoint:
+			 *
+			 *   tailscale-out
+			 *     State    NeedsLogin
+			 *     Log in   https://login.tailscale.com/a/xxxx
+			 */
+			let active = false, result = { state: 'unavailable' };
+
+			for (let raw in split(output, '\n')) {
+				/* the endpoint tag is the only line without leading blanks */
+				if (length(raw) && raw === trim(raw)) {
+					active = (raw === 'tailscale-out');
+					continue;
+				}
+
+				if (!active)
+					continue;
+
+				const state = match(raw, /^[[:space:]]*State:[[:space:]]*([A-Za-z]+)/),
+				      auth = match(raw, /^[[:space:]]*Log in:[[:space:]]*(https?:\/\/[^[:space:]<>"']+)/),
+				      network = match(raw, /^[[:space:]]*Network:[[:space:]]*(.+)$/);
+
+				if (state)
+					result.state = state[1];
+				if (auth)
+					result.auth_url = auth[1];
+				if (network)
+					result.network = trim(network[1]);
+			}
+
+			if (result.state === 'Running')
+				delete result.auth_url;
+
+			return result;
 		}
 	},
 
