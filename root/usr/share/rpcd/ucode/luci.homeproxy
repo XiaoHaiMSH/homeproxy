@@ -22,9 +22,9 @@ function hasKernelModule(kmod) {
 const HP_DIR = '/etc/homeproxy';
 const RUN_DIR = '/var/run/homeproxy';
 
-/* the API query spawns a client, do not do it for every caller */
+/* the API query spawns a client, keep it below the UI poll interval (5s) */
 const CURRENT_NODE_CACHE = RUN_DIR + '/current_node.json';
-const CURRENT_NODE_TTL = 8;
+const CURRENT_NODE_TTL = 4;
 
 /*
  * Outbound tags are derived from the node labels, keep in sync with

@@ -188,8 +188,8 @@ return view.extend({
 			let lastNodeFetch = 0, cachedNode = {};
 
 			const getCurrentNode = () => {
-				/* the API query spawns a process, do not run it every poll tick */
-				if (Date.now() - lastNodeFetch < 10000)
+				/* the API query spawns a process, keep it to one call per poll tick */
+				if (Date.now() - lastNodeFetch < 5000)
 					return Promise.resolve(cachedNode);
 				lastNodeFetch = Date.now();
 				return L.resolveDefault(callCurrentNode(), {}).then((res) => {
