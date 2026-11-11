@@ -7,7 +7,7 @@
  * Migrates a configuration created before the sing-box 1.14 rework to the
  * current layout:
  *
- *   - the custom routing mode (and "only proxy mainland China") is gone,
+ *   - the custom, gfwlist and "only proxy mainland China" routing modes are gone,
  *     together with its rule, DNS and rule set editors
  *   - one node (or URLTest group) carries both TCP and UDP now
  *   - DNS fallback servers, the dashboard and the TUN stack option are new
@@ -30,7 +30,7 @@ const ucimain = 'config';
 const legacy_tcpip_stack = uci.get(uciconfig, 'routing', 'tcpip_stack');
 
 /* the custom routing modes were removed */
-if (uci.get(uciconfig, ucimain, 'routing_mode') in ['custom', 'proxy_mainland_china'])
+if (uci.get(uciconfig, ucimain, 'routing_mode') in ['custom', 'gfwlist', 'proxy_mainland_china'])
 	uci.set(uciconfig, ucimain, 'routing_mode', 'bypass_mainland_china');
 
 /* the TUN stack is a regular option now, keep what the user had chosen */

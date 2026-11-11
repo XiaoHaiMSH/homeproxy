@@ -56,7 +56,10 @@ const cfgname = 'homeproxy';
 const uci = cursor();
 uci.load(cfgname);
 
-const routing_mode = uci.get(cfgname, 'config', 'routing_mode') || 'bypass_mainland_china';
+let routing_mode = uci.get(cfgname, 'config', 'routing_mode') || 'bypass_mainland_china';
+/* the custom, gfwlist and proxy_mainland_china modes were removed */
+if (routing_mode in ['custom', 'gfwlist', 'proxy_mainland_china'])
+	routing_mode = 'bypass_mainland_china';
 const china_dns_server = uci.get(cfgname, 'config', 'china_dns_server');
 
 let routing_port = uci.get(cfgname, 'config', 'routing_port');
@@ -152,20 +155,7 @@ set homeproxy_local_addr_v6 {
 }
 {% endif %}
 
-{% if (routing_mode === 'gfwlist'): %}
-set homeproxy_gfw_list_v4 {
-	type ipv4_addr
-	flags interval
-	auto-merge
-}
-{% if (ipv6_support === '1'): %}
-set homeproxy_gfw_list_v6 {
-	type ipv6_addr
-	flags interval
-	auto-merge
-}
-{% endif /* ipv6_support */ %}
-{% elif (routing_mode === 'bypass_mainland_china'): %}
+{% if (routing_mode === 'bypass_mainland_china'): %}
 set homeproxy_mainland_addr_v4 {
 	type ipv4_addr
 	flags interval
@@ -327,12 +317,7 @@ chain homeproxy_redirect {
 	ip6 daddr @homeproxy_wan_direct_addr_v6 counter return
 	{% endif /* ipv6_support */ %}
 
-	{% if (routing_mode === 'gfwlist'): %}
-	ip daddr != @homeproxy_gfw_list_v4 counter return
-	{% if (ipv6_support === '1'): %}
-	ip6 daddr != @homeproxy_gfw_list_v6 counter return
-	{% endif /* ipv6_support */ %}
-	{% elif (routing_mode === 'bypass_mainland_china'): %}
+	{% if (routing_mode === 'bypass_mainland_china'): %}
 	ip daddr @homeproxy_mainland_addr_v4 counter return
 	{% if (ipv6_support === '1'): %}
 	ip6 daddr @homeproxy_mainland_addr_v6 counter return
@@ -441,13 +426,7 @@ chain homeproxy_mangle_prerouting {
 	ip6 daddr @homeproxy_wan_direct_addr_v6 counter return
 	{% endif /* ipv6_support */ %}
 
-	{% if (routing_mode === 'gfwlist'): %}
-	ip daddr != @homeproxy_gfw_list_v4 counter return
-	{% if (ipv6_support === '1'): %}
-	ip6 daddr != @homeproxy_gfw_list_v6 counter return
-	{% endif /* ipv6_support */ %}
-	udp dport { 80, 443 } counter reject comment "!{{ cfgname }}: Fuck you QUIC"
-	{% elif (routing_mode === 'bypass_mainland_china'): %}
+	{% if (routing_mode === 'bypass_mainland_china'): %}
 	ip daddr @homeproxy_mainland_addr_v4 counter return
 	{% if (ipv6_support === '1'): %}
 	ip6 daddr @homeproxy_mainland_addr_v6 counter return
@@ -486,12 +465,7 @@ chain homeproxy_mangle_output {
 	ip6 daddr @homeproxy_wan_direct_addr_v6 counter return
 	{% endif /* ipv6_support */ %}
 
-	{% if (routing_mode === 'gfwlist'): %}
-	ip daddr != @homeproxy_gfw_list_v4 counter return
-	{% if (ipv6_support === '1'): %}
-	ip6 daddr != @homeproxy_gfw_list_v6 counter return
-	{% endif /* ipv6_support */ %}
-	{% elif (routing_mode === 'bypass_mainland_china'): %}
+	{% if (routing_mode === 'bypass_mainland_china'): %}
 	ip daddr @homeproxy_mainland_addr_v4 counter return
 	{% if (ipv6_support === '1'): %}
 	ip6 daddr @homeproxy_mainland_addr_v6 counter return
@@ -588,13 +562,7 @@ chain homeproxy_mangle_tun {
 	ip6 daddr {{ array_to_nftarr(control_info.wan_direct_ipv6_ips) }} counter return
 	{% endif /* wan_direct_ipv6_ips */ %}
 
-	{% if (routing_mode === 'gfwlist'): %}
-	ip daddr != @homeproxy_gfw_list_v4 counter return
-	{% if (ipv6_support === '1'): %}
-	ip6 daddr != @homeproxy_gfw_list_v6 counter return
-	{% endif /* ipv6_support */ %}
-	udp dport { 80, 443 } counter reject comment "!{{ cfgname }}: Fuck you QUIC"
-	{% elif (routing_mode === 'bypass_mainland_china'): %}
+	{% if (routing_mode === 'bypass_mainland_china'): %}
 	ip daddr @homeproxy_mainland_addr_v4 counter return
 	{% if (ipv6_support === '1'): %}
 	ip6 daddr @homeproxy_mainland_addr_v6 counter return

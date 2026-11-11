@@ -249,10 +249,6 @@ return view.extend({
 		o.cfgvalue = L.bind(getResVersion, this, o, 'china_ip6');
 		o.rawhtml = true;
 
-		o = s.option(form.DummyValue, '_gfw_list_version', _('GFW list version'));
-		o.cfgvalue = L.bind(getResVersion, this, o, 'gfw_list');
-		o.rawhtml = true;
-
 		o = s.option(form.DummyValue, '_dashboard_version', _('Dashboard version'));
 		o.cfgvalue = L.bind(getResVersion, this, o, 'dashboard');
 		o.rawhtml = true;

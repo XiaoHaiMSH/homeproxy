@@ -68,8 +68,8 @@ const app_rule_urls = {
 };
 
 let routing_mode = uci.get(uciconfig, ucimain, 'routing_mode') || 'bypass_mainland_china';
-/* custom and proxy_mainland_china were removed, migrate_config.uc rewrites them */
-if (routing_mode in ['custom', 'proxy_mainland_china'])
+/* custom, gfwlist and proxy_mainland_china were removed, migrate_config.uc rewrites them */
+if (routing_mode in ['custom', 'gfwlist', 'proxy_mainland_china'])
 	routing_mode = 'bypass_mainland_china';
 
 let wan_dns = ubus.call('network.interface', 'status', {'interface': 'wan'})?.['dns-server']?.[0];
@@ -644,9 +644,9 @@ if (!isEmpty(main_node)) {
 		});
 
 	/* Filter out SVCB/HTTPS queries for "exquisite" Apple devices */
-	if (routing_mode === 'gfwlist' || length(proxy_domain_list))
+	if (length(proxy_domain_list))
 		push(config.dns.rules, {
-			rule_set: (routing_mode !== 'gfwlist') ? 'proxy-domain' : null,
+			rule_set: 'proxy-domain',
 			query_type: [64, 65],
 			action: 'reject'
 		});
@@ -748,6 +748,16 @@ if (tailscale_enabled)
 	push(config.endpoints, {
 		type: 'tailscale',
 		tag: tailscale_tag,
+		/* Talk to the coordination server and the peers directly: the
+		   transparent proxy would otherwise intercept these connections and
+		   the node never reaches the login state. */
+		routing_mark: strToInt(self_mark),
+		/* Resolve the coordination server with the WAN resolver instead of the
+		   mainland one, which may answer with an unreachable address. */
+		domain_resolver: {
+			server: 'default-dns',
+			strategy: dns_default_strategy
+		},
 		state_directory: HP_DIR + '/tailscale',
 		taildrop_directory: HP_DIR + '/tailscale/taildrop',
 		auth_key: tailscale_auth_key,

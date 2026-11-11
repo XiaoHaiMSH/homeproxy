@@ -161,14 +161,11 @@ case "$1" in
 "china_ip6")
 	check_list_update "$1" "1715173329/IPCIDR-CHINA" "master" "ipv6.txt"
 	;;
-"gfw_list")
-	check_list_update "$1" "Loyalsoldier/v2ray-rules-dat" "release" "gfw.txt"
-	;;
 "dashboard")
 	check_dashboard_update
 	;;
 *)
-	echo -e "Usage: $0 <china_ip4 / china_ip6 / gfw_list / dashboard>"
+	echo -e "Usage: $0 <china_ip4 / china_ip6 / dashboard>"
 	exit 1
 	;;
 esac

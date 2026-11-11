@@ -890,14 +890,6 @@ msgstr "流控"
 msgid "GET"
 msgstr "GET"
 
-#: htdocs/luci-static/resources/view/homeproxy/status.js:252
-msgid "GFW list version"
-msgstr "GFW 域名列表版本"
-
-#: htdocs/luci-static/resources/view/homeproxy/client.js:298
-msgid "GFWList"
-msgstr "GFWList"
-
 #: htdocs/luci-static/resources/view/homeproxy/client.js:569
 msgid "Gaming mode IPv4 IP-s"
 msgstr "游戏模式 IPv4 地址"
@@ -2933,8 +2925,8 @@ msgid "Hostname"
 msgstr "主机名"
 
 #: htdocs/luci-static/resources/view/homeproxy/client.js
-msgid "Join the router to a Tailscale network through the sing-box endpoint. Unlike the proxy nodes it works without a main node; LAN clients can only reach the tailnet while the transparent proxy is running. MagicDNS is delivered to the LAN in the \"Bypass mainland China\" and \"Global\" routing modes only."
-msgstr "通过 sing-box endpoint 将路由器加入 Tailscale 网络。与代理节点不同，它不需要主节点；只有在透明代理运行时，局域网设备才能访问 tailnet。MagicDNS 仅在「绕过中国大陆」和「全局」路由模式下对局域网生效。"
+msgid "Join the router to a Tailscale network through the sing-box endpoint. Unlike the proxy nodes it works without a main node; LAN clients can only reach the tailnet while the transparent proxy is running. MagicDNS is delivered to the LAN in the \"Bypass mainland China\" and \"Global\" routing modes only. The coordination server and the peers are contacted directly, never through the proxy nodes."
+msgstr "通过 sing-box endpoint 将路由器加入 Tailscale 网络。与代理节点不同，它不需要主节点；只有在透明代理运行时，局域网设备才能访问 tailnet。MagicDNS 仅在「绕过中国大陆」和「全局」路由模式下对局域网生效。与协调服务器及对端节点的连接始终直连，不经过代理节点。"
 
 #: htdocs/luci-static/resources/view/homeproxy/client.js
 msgid "Keep locally reachable subnets outside the selected exit node."

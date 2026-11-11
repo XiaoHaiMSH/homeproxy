@@ -43,6 +43,5 @@ check_list_update() {
 
 check_list_update "china_ip4" "1715173329/IPCIDR-CHINA" "master" "ipv4.txt"
 check_list_update "china_ip6" "1715173329/IPCIDR-CHINA" "master" "ipv6.txt"
-check_list_update "gfw_list" "Loyalsoldier/v2ray-rules-dat" "release" "gfw.txt"
 
 rm -rf "$TEMP_DIR"

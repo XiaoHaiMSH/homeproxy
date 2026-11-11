@@ -5,7 +5,7 @@
 
 SCRIPTS_DIR="/etc/homeproxy/scripts"
 
-for i in "china_ip4" "china_ip6" "gfw_list"; do
+for i in "china_ip4" "china_ip6"; do
 	"$SCRIPTS_DIR"/update_resources.sh "$i"
 done
 

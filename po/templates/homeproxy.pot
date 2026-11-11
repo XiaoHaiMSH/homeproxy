@@ -866,14 +866,6 @@ msgstr ""
 msgid "GET"
 msgstr ""
 
-#: htdocs/luci-static/resources/view/homeproxy/status.js:252
-msgid "GFW list version"
-msgstr ""
-
-#: htdocs/luci-static/resources/view/homeproxy/client.js:298
-msgid "GFWList"
-msgstr ""
-
 #: htdocs/luci-static/resources/view/homeproxy/client.js:569
 msgid "Gaming mode IPv4 IP-s"
 msgstr ""
@@ -2877,7 +2869,7 @@ msgid "Hostname"
 msgstr ""
 
 #: htdocs/luci-static/resources/view/homeproxy/client.js
-msgid "Join the router to a Tailscale network through the sing-box endpoint. Unlike the proxy nodes it works without a main node; LAN clients can only reach the tailnet while the transparent proxy is running. MagicDNS is delivered to the LAN in the \"Bypass mainland China\" and \"Global\" routing modes only."
+msgid "Join the router to a Tailscale network through the sing-box endpoint. Unlike the proxy nodes it works without a main node; LAN clients can only reach the tailnet while the transparent proxy is running. MagicDNS is delivered to the LAN in the \"Bypass mainland China\" and \"Global\" routing modes only. The coordination server and the peers are contacted directly, never through the proxy nodes."
 msgstr ""
 
 #: htdocs/luci-static/resources/view/homeproxy/client.js

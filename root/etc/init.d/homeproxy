@@ -34,6 +34,12 @@ start_service() {
 	config_get routing_mode "config" "routing_mode" "bypass_mainland_china"
 	config_get proxy_mode "config" "proxy_mode" "redirect_tproxy"
 
+	# the custom, gfwlist and proxy_mainland_china modes were removed
+	case "$routing_mode" in
+	"bypass_mainland_china"|"global") ;;
+	*) routing_mode="bypass_mainland_china" ;;
+	esac
+
 	local outbound_node
 	config_get outbound_node "config" "main_node" "nil"
 
@@ -90,12 +96,6 @@ start_service() {
 				no-resolv
 				server=127.0.0.1#$dns_port
 			EOF
-			;;
-		"gfwlist")
-			local gfw_nftset_v6
-			[ "$ipv6_support" -eq "0" ] || gfw_nftset_v6=",6#inet#fw4#homeproxy_gfw_list_v6"
-			sed -r -e "s/(.*)/server=\/\1\/127.0.0.1#$dns_port\nnftset=\/\1\\/4#inet#fw4#homeproxy_gfw_list_v4$gfw_nftset_v6/g" \
-				"$HP_DIR/resources/gfw_list.txt" > "$DNSMASQ_DIR/gfw_list.conf"
 			;;
 		esac
 
@@ -286,7 +286,6 @@ stop_service() {
 		nft delete chain inet fw4 "$i"
 	done 2>"/dev/null"
 	for i in "homeproxy_local_addr_v4" "homeproxy_local_addr_v6" \
-		 "homeproxy_gfw_list_v4" "homeproxy_gfw_list_v6" \
 		 "homeproxy_mainland_addr_v4" "homeproxy_mainland_addr_v6" \
 		 "homeproxy_wan_proxy_addr_v4" "homeproxy_wan_proxy_addr_v6" \
 		 "homeproxy_wan_direct_addr_v4" "homeproxy_wan_direct_addr_v6" \

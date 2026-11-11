@@ -325,7 +325,6 @@ return view.extend({
 		o.placeholder = '10';
 
 		o = s.taboption('routing', form.ListValue, 'routing_mode', _('Routing mode'));
-		o.value('gfwlist', _('GFWList'));
 		o.value('bypass_mainland_china', _('Bypass mainland China'));
 		o.value('global', _('Global'));
 		o.default = 'bypass_mainland_china';
@@ -533,7 +532,7 @@ return view.extend({
 		ss = o.subsection;
 
 		so = ss.option(form.Flag, 'enabled', _('Enable Tailscale'),
-			_('Join the router to a Tailscale network through the sing-box endpoint. Unlike the proxy nodes it works without a main node; LAN clients can only reach the tailnet while the transparent proxy is running. MagicDNS is delivered to the LAN in the "Bypass mainland China" and "Global" routing modes only.'));
+			_('Join the router to a Tailscale network through the sing-box endpoint. Unlike the proxy nodes it works without a main node; LAN clients can only reach the tailnet while the transparent proxy is running. MagicDNS is delivered to the LAN in the "Bypass mainland China" and "Global" routing modes only. The coordination server and the peers are contacted directly, never through the proxy nodes.'));
 		so.default = so.disabled;
 		so.rmempty = false;
 

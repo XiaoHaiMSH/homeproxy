@@ -450,7 +450,7 @@ const methods = {
 		args: { type: 'type' },
 		call: function(req) {
 			const type = req.args?.type;
-			if (!(type in ['china_ip4', 'china_ip6', 'gfw_list', 'dashboard']))
+			if (!(type in ['china_ip4', 'china_ip6', 'dashboard']))
 				return { version: null, error: 'illegal type' };
 
 			/* The dashboard keeps its version file in its own directory */
@@ -465,7 +465,7 @@ const methods = {
 		args: { type: 'type' },
 		call: function(req) {
 			const type = req.args?.type;
-			if (!(type in ['china_ip4', 'china_ip6', 'gfw_list', 'dashboard']))
+			if (!(type in ['china_ip4', 'china_ip6', 'dashboard']))
 				return { status: 255, error: 'illegal type' };
 
 			const exit_code = system(`${HP_DIR}/scripts/update_resources.sh ${shellquote(type)}`);
