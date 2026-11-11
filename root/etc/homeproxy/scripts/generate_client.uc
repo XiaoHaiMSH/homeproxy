@@ -131,10 +131,16 @@ let self_mark, redirect_port, tproxy_port, tun_name,
 
 udp_timeout = uci.get(uciconfig, uciinfra, 'udp_timeout');
 
-if (match(proxy_mode, /redirect/)) {
-	self_mark = uci.get(uciconfig, 'infra', 'self_mark') || '100';
+/*
+ * Every mode needs the mark: the sockets sing-box creates for its own
+ * outbounds (proxy nodes, direct, endpoints) carry it, so the redirect and
+ * TUN rules never capture the traffic a second time. Without it a pure TUN
+ * setup loops its own connections back into the tun.
+ */
+self_mark = uci.get(uciconfig, 'infra', 'self_mark') || '100';
+
+if (match(proxy_mode, /redirect/))
 	redirect_port = uci.get(uciconfig, 'infra', 'redirect_port') || '5331';
-}
 if (match(proxy_mode, /tproxy/))
 	tproxy_port = uci.get(uciconfig, 'infra', 'tproxy_port') || '5332';
 if (match(proxy_mode, /tun/)) {

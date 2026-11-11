@@ -533,6 +533,8 @@ chain homeproxy_mangle_tun_mark {
 }
 
 chain homeproxy_mangle_tun {
+	{# sing-box's own outbound sockets are marked, never route them into the tun again #}
+	meta mark {{ self_mark }} counter return
 	iifname {{ tun_name }} counter return
 
 	ip daddr @homeproxy_wan_proxy_addr_v4 counter goto homeproxy_mangle_tun_mark
