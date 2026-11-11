@@ -69,14 +69,17 @@ if (routing_port === 'common')
 const proxy_mode = uci.get(cfgname, 'config', 'proxy_mode') || 'redirect_tproxy',
       ipv6_support = uci.get(cfgname, 'config', 'ipv6_support') || '0';
 
+const tailscale_enabled = uci.get(cfgname, 'tailscale', 'enabled') === '1';
+
 let self_mark, redirect_port,
     tproxy_port, tproxy_mark,
     tun_name, tun_mark;
 
-if (match(proxy_mode, /redirect/)) {
-	self_mark = uci.get(cfgname, 'infra', 'self_mark') || '100';
+/* the mark is used by every mode, the TUN chain needs it as well */
+self_mark = uci.get(cfgname, 'infra', 'self_mark') || '100';
+
+if (match(proxy_mode, /redirect/))
 	redirect_port = uci.get(cfgname, 'infra', 'redirect_port') || '5331';
-}
 if (match(proxy_mode, /tproxy/)) {
 	tproxy_port = uci.get(cfgname, 'infra', 'tproxy_port') || '5332';
 	tproxy_mark = resolve_mark(uci.get(cfgname, 'infra', 'tproxy_mark') || '101');
@@ -297,6 +300,13 @@ chain homeproxy_redirect {
 	ip6 daddr @homeproxy_wan_proxy_addr_v6 counter goto homeproxy_redirect_proxy_port
 	{% endif %}
 
+	{% if (tailscale_enabled): %}
+	{# the tailnet ranges are listed as reserved addresses, send them to the endpoint instead #}
+	ip daddr 100.64.0.0/10 counter goto homeproxy_redirect_proxy
+	{% if (ipv6_support === '1'): %}
+	ip6 daddr fd7a:115c:a1e0::/48 counter goto homeproxy_redirect_proxy
+	{% endif /* ipv6_support */ %}
+	{% endif /* tailscale_enabled */ %}
 	ip daddr @homeproxy_local_addr_v4 counter return
 	{% if (ipv6_support === '1'): %}
 	ip6 daddr @homeproxy_local_addr_v6 counter return
@@ -406,6 +416,13 @@ chain homeproxy_mangle_prerouting {
 	ip6 daddr @homeproxy_wan_proxy_addr_v6 counter goto homeproxy_mangle_tproxy_port
 	{% endif %}
 
+	{% if (tailscale_enabled): %}
+	{# the tailnet ranges are listed as reserved addresses, send them to the endpoint instead #}
+	ip daddr 100.64.0.0/10 counter goto homeproxy_mangle_tproxy
+	{% if (ipv6_support === '1'): %}
+	ip6 daddr fd7a:115c:a1e0::/48 counter goto homeproxy_mangle_tproxy
+	{% endif /* ipv6_support */ %}
+	{% endif /* tailscale_enabled */ %}
 	ip daddr @homeproxy_local_addr_v4 counter return
 	{% if (ipv6_support === '1'): %}
 	ip6 daddr @homeproxy_local_addr_v6 counter return
@@ -455,6 +472,13 @@ chain homeproxy_mangle_output {
 	ip6 daddr @homeproxy_wan_proxy_addr_v6 counter goto homeproxy_mangle_mark
 	{% endif %}
 
+	{% if (tailscale_enabled): %}
+	{# the tailnet ranges are listed as reserved addresses, send them to the endpoint instead #}
+	ip daddr 100.64.0.0/10 counter goto homeproxy_mangle_mark
+	{% if (ipv6_support === '1'): %}
+	ip6 daddr fd7a:115c:a1e0::/48 counter goto homeproxy_mangle_mark
+	{% endif /* ipv6_support */ %}
+	{% endif /* tailscale_enabled */ %}
 	ip daddr @homeproxy_local_addr_v4 counter return
 	{% if (ipv6_support === '1'): %}
 	ip6 daddr @homeproxy_local_addr_v6 counter return
@@ -542,6 +566,13 @@ chain homeproxy_mangle_tun {
 	ip6 daddr @homeproxy_wan_proxy_addr_v6 counter goto homeproxy_mangle_tun_mark
 	{% endif %}
 
+	{% if (tailscale_enabled): %}
+	{# the tailnet ranges are listed as reserved addresses, send them to the endpoint instead #}
+	ip daddr 100.64.0.0/10 counter meta mark set {{ tun_mark }}
+	{% if (ipv6_support === '1'): %}
+	ip6 daddr fd7a:115c:a1e0::/48 counter meta mark set {{ tun_mark }}
+	{% endif /* ipv6_support */ %}
+	{% endif /* tailscale_enabled */ %}
 	ip daddr @homeproxy_local_addr_v4 counter return
 	{% if (ipv6_support === '1'): %}
 	ip6 daddr @homeproxy_local_addr_v6 counter return
