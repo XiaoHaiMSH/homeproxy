@@ -152,9 +152,17 @@ export function reconcileUrltestNodes(uci, config, logger) {
 
 	/* application routing rules */
 	uci.foreach(config, 'app_rule', (section) => {
-		reconcileList(section['.name'], 'urltest_nodes');
-
+		const available = reconcileList(section['.name'], 'urltest_nodes');
 		const node = section.node;
+
+		/* An empty URLTest group would silently use the main node at runtime,
+		   reflect that in the configuration as well */
+		if (node === 'urltest' && !length(available)) {
+			uci.set(config, section['.name'], 'node', 'main-out');
+			changed = true;
+			log(sprintf('URLTest group of routing rule %s is empty; falling back to the main node.', section['.name']));
+			return;
+		}
 
 		if (isEmpty(node) || node in ['main-out', 'urltest', 'direct-out', 'reject-out', 'tailscale'])
 			return;
