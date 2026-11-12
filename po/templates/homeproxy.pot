@@ -1368,10 +1368,6 @@ msgstr ""
 msgid "Mixed"
 msgstr ""
 
-#: htdocs/luci-static/resources/view/homeproxy/client.js:341
-msgid "Mixed (recommended)"
-msgstr ""
-
 #: htdocs/luci-static/resources/view/homeproxy/client.js:390
 msgid "Mixed rule-set (domain + IP)"
 msgstr ""
@@ -2034,10 +2030,6 @@ msgid ""
 "Support UDP, TCP, DoH, DoQ, DoT. TCP protocol will be used if not specified."
 msgstr ""
 
-#: htdocs/luci-static/resources/view/homeproxy/client.js:339
-msgid "System"
-msgstr ""
-
 #: htdocs/luci-static/resources/view/homeproxy/server.js:1021
 msgid "TCP"
 msgstr ""
@@ -2614,10 +2606,6 @@ msgstr ""
 #: htdocs/luci-static/resources/view/homeproxy/node.js:914
 #: htdocs/luci-static/resources/view/homeproxy/server.js:433
 msgid "gRPC service name"
-msgstr ""
-
-#: htdocs/luci-static/resources/view/homeproxy/client.js:340
-msgid "gVisor"
 msgstr ""
 
 #: htdocs/luci-static/resources/view/homeproxy/node.js:1037

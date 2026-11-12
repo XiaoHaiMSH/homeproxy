@@ -386,9 +386,9 @@ return view.extend({
 
 		o = s.taboption('routing', form.ListValue, 'tcpip_stack', _('TCP/IP stack'),
 			_('TCP/IP stack used by the TUN inbound.'));
-		o.value('system', _('System'));
-		o.value('gvisor', _('gVisor'));
-		o.value('mixed', _('Mixed (recommended)'));
+		o.value('system', 'System');
+		o.value('gvisor', 'gVisor');
+		o.value('mixed', 'Mixed');
 		o.default = 'system';
 		o.rmempty = false;
 		o.depends('proxy_mode', /tun/);

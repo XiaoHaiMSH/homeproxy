@@ -1398,10 +1398,6 @@ msgstr "最小流数量"
 msgid "Mixed"
 msgstr "混合"
 
-#: htdocs/luci-static/resources/view/homeproxy/client.js:341
-msgid "Mixed (recommended)"
-msgstr "混合（推荐）"
-
 #: htdocs/luci-static/resources/view/homeproxy/client.js:390
 msgid "Mixed rule-set (domain + IP)"
 msgstr "混合规则集（域名 + IP）"
@@ -2075,10 +2071,6 @@ msgid ""
 "Support UDP, TCP, DoH, DoQ, DoT. TCP protocol will be used if not specified."
 msgstr "支持 UDP、TCP、DoH、DoQ、DoT。如未指定则使用 TCP 协议。"
 
-#: htdocs/luci-static/resources/view/homeproxy/client.js:339
-msgid "System"
-msgstr "系统"
-
 #: htdocs/luci-static/resources/view/homeproxy/server.js:1021
 msgid "TCP"
 msgstr "TCP"
@@ -2668,10 +2660,6 @@ msgstr "gRPC 允许无活动连接"
 #: htdocs/luci-static/resources/view/homeproxy/server.js:433
 msgid "gRPC service name"
 msgstr "gRPC 服务名称"
-
-#: htdocs/luci-static/resources/view/homeproxy/client.js:340
-msgid "gVisor"
-msgstr "gVisor"
 
 #: htdocs/luci-static/resources/view/homeproxy/node.js:1037
 msgid ""
