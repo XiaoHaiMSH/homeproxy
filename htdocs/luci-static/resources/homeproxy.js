@@ -33,14 +33,7 @@ return baseclass.extend({
 		function reconcileList(section, option) {
 			const current = uci.get(uciconfig, section, option);
 			const normalized = Array.isArray(current) ? current : (current ? [current] : []);
-			const seen = Object.create(null);
-			const filtered = normalized.filter((node) => {
-				if (!node || seen[node] || !available[node])
-					return false;
-
-				seen[node] = true;
-				return true;
-			});
+			const filtered = normalized.filter((node) => node && available[node]);
 
 			if (JSON.stringify(normalized) !== JSON.stringify(filtered)) {
 				uci.set(uciconfig, section, option, filtered.length ? filtered : null);

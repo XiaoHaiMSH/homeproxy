@@ -128,17 +128,7 @@ export function reconcileUrltestNodes(uci, config, logger) {
 		if (!length(current))
 			return [];
 
-		let seen = {};
-
 		const available = filter(current, (id) => {
-			if (seen[id]) {
-				removed++;
-				log(sprintf('URLTest node %s is duplicated; dropping it from %s.%s.', id, section, option));
-				return false;
-			}
-
-			seen[id] = true;
-
 			if (nodeExists(id))
 				return true;
 
