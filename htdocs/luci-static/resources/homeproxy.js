@@ -13,6 +13,76 @@
 'require ui';
 
 return baseclass.extend({
+	/*
+	 * Drop references to nodes that no longer exist from the URLTest lists.
+	 * This runs in the browser right after the node page is saved, so the
+	 * cleanup does not depend on a service restart.
+	 */
+	reconcileUrltestNodes(uciconfig) {
+		const available = Object.create(null);
+		let firstNode = null;
+		let changed = false;
+
+		uci.sections(uciconfig, 'node', (section) => {
+			available[section['.name']] = true;
+
+			if (firstNode === null)
+				firstNode = section['.name'];
+		});
+
+		function reconcileList(section, option) {
+			const current = uci.get(uciconfig, section, option);
+			const normalized = Array.isArray(current) ? current : (current ? [current] : []);
+			const seen = Object.create(null);
+			const filtered = normalized.filter((node) => {
+				if (!node || seen[node] || !available[node])
+					return false;
+
+				seen[node] = true;
+				return true;
+			});
+
+			if (JSON.stringify(normalized) !== JSON.stringify(filtered)) {
+				uci.set(uciconfig, section, option, filtered.length ? filtered : null);
+				changed = true;
+			}
+
+			return filtered;
+		}
+
+		const mainNodes = reconcileList('config', 'main_urltest_nodes');
+		const mainNode = uci.get(uciconfig, 'config', 'main_node');
+
+		if (mainNode === 'urltest' && !mainNodes.length) {
+			uci.set(uciconfig, 'config', 'main_node', firstNode || 'nil');
+			changed = true;
+		}
+		else if (mainNode && mainNode !== 'nil' && mainNode !== 'urltest' && !available[mainNode]) {
+			uci.set(uciconfig, 'config', 'main_node', firstNode || 'nil');
+			changed = true;
+		}
+
+		uci.sections(uciconfig, 'app_rule', (cfg) => {
+			const node = cfg.node || 'main-out';
+
+			if (node === 'urltest') {
+				const nodes = reconcileList(cfg['.name'], 'urltest_nodes');
+
+				if (!nodes.length) {
+					uci.set(uciconfig, cfg['.name'], 'node', 'main-out');
+					changed = true;
+				}
+			}
+			else if (node !== 'main-out' && node !== 'direct-out' &&
+			         node !== 'reject-out' && node !== 'tailscale' && !available[node]) {
+				uci.set(uciconfig, cfg['.name'], 'node', 'main-out');
+				changed = true;
+			}
+		});
+
+		return changed;
+	},
+
 	shadowsocks_encrypt_length: {
 		/* AEAD */
 		'aes-128-gcm': 0,

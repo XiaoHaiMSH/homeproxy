@@ -1663,6 +1663,15 @@ return view.extend({
 
 		m = new form.Map('homeproxy', _('Edit nodes'));
 
+		/* Saving the page rerenders sections, clean the URLTest lists of the
+		   nodes that were just removed before the changes are committed. */
+		const saveMap = m.save;
+		m.save = function(cb, silent) {
+			return saveMap.call(this, () => Promise.resolve(
+				typeof cb === 'function' ? cb() : null
+			).then(() => hp.reconcileUrltestNodes(data[0])), silent);
+		};
+
 		s = m.section(form.NamedSection, 'subscription', 'homeproxy');
 
 		/* Node settings start */

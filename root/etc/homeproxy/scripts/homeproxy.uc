@@ -128,7 +128,17 @@ export function reconcileUrltestNodes(uci, config, logger) {
 		if (!length(current))
 			return [];
 
+		let seen = {};
+
 		const available = filter(current, (id) => {
+			if (seen[id]) {
+				removed++;
+				log(sprintf('URLTest node %s is duplicated; dropping it from %s.%s.', id, section, option));
+				return false;
+			}
+
+			seen[id] = true;
+
 			if (nodeExists(id))
 				return true;
 
@@ -154,13 +164,14 @@ export function reconcileUrltestNodes(uci, config, logger) {
 	uci.foreach(config, 'app_rule', (section) => {
 		const available = reconcileList(section['.name'], 'urltest_nodes');
 		const node = section.node;
+		const label = trim(section.custom_service_name || '') || section.source || section['.name'];
 
 		/* An empty URLTest group would silently use the main node at runtime,
 		   reflect that in the configuration as well */
 		if (node === 'urltest' && !length(available)) {
 			uci.set(config, section['.name'], 'node', 'main-out');
 			changed = true;
-			log(sprintf('URLTest group of routing rule %s is empty; falling back to the main node.', section['.name']));
+			log(sprintf('Routing rule "%s" has no URLTest node left; falling back to the main node.', label));
 			return;
 		}
 
@@ -170,7 +181,7 @@ export function reconcileUrltestNodes(uci, config, logger) {
 		if (!nodeExists(node)) {
 			uci.set(config, section['.name'], 'node', 'main-out');
 			changed = true;
-			log(sprintf('Node %s is unavailable; routing rule %s falls back to the main node.', node, section['.name']));
+			log(sprintf('Node %s is unavailable; routing rule "%s" falls back to the main node.', node, label));
 		}
 	});
 
