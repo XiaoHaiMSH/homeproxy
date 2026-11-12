@@ -233,18 +233,22 @@ return view.extend({
 			o.value(i, proxy_nodes[i]);
 		o.depends('main_node', 'urltest');
 		o.rmempty = false;
+		/* keep the selection when another main node is used */
+		o.retain = true;
 
 		o = s.taboption('routing', form.Value, 'main_urltest_interval', _('Test interval'),
 			_('The test interval in seconds.'));
 		o.datatype = 'uinteger';
 		o.placeholder = '180';
 		o.depends('main_node', 'urltest');
+		o.retain = true;
 
 		o = s.taboption('routing', form.Value, 'main_urltest_tolerance', _('Test tolerance'),
 			_('The test tolerance in milliseconds.'));
 		o.datatype = 'uinteger';
 		o.placeholder = '50';
 		o.depends('main_node', 'urltest');
+		o.retain = true;
 
 		o = s.taboption('dns', form.Value, 'dns_server', _('DNS server'),
 			_('Support UDP, TCP, DoH, DoQ, DoT. TCP protocol will be used if not specified.'));
@@ -293,6 +297,7 @@ return view.extend({
 		o.depends('routing_mode', 'bypass_mainland_china');
 		o.default = '223.5.5.5';
 		o.rmempty = false;
+		o.retain = true;
 		o.validate = function(section_id, value) {
 			if (section_id && !['wan'].includes(value)) {
 				if (!value)
@@ -769,6 +774,7 @@ return view.extend({
 		so = ss.taboption('wan_ip_policy', form.DynamicList, 'wan_proxy_ipv6_ips', _('Proxy IPv6 IP-s'));
 		so.datatype = 'or(ip6addr, cidr6)';
 		so.depends('homeproxy.config.ipv6_support', '1');
+		so.retain = true;
 
 		so = ss.taboption('wan_ip_policy', form.DynamicList, 'wan_direct_ipv4_ips', _('Direct IPv4 IP-s'));
 		so.datatype = 'or(ip4addr, cidr4)';
@@ -776,6 +782,7 @@ return view.extend({
 		so = ss.taboption('wan_ip_policy', form.DynamicList, 'wan_direct_ipv6_ips', _('Direct IPv6 IP-s'));
 		so.datatype = 'or(ip6addr, cidr6)';
 		so.depends('homeproxy.config.ipv6_support', '1');
+		so.retain = true;
 		/* WAN IP policy end */
 
 		/* Proxy domain list start */
