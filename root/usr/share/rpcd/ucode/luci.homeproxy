@@ -453,12 +453,20 @@ const methods = {
 			if (!(type in ['china_ip4', 'china_ip6', 'dashboard']))
 				return { version: null, error: 'illegal type' };
 
-			/* The dashboard keeps its version file in its own directory */
+			/* The dashboard keeps its version file in its own directory and
+			 * stores the build date on its first line, the commit SHA on the
+			 * second one; only the former is displayed. */
 			const versionfile = (type === 'dashboard') ?
 				`${HP_DIR}/dashboard/dashboard.ver` : `${HP_DIR}/resources/${type}.ver`;
 
-			const version = trim(readfile(versionfile));
-			return { version: version, error: error() };
+			const content = trim(readfile(versionfile) || '');
+
+			if (type === 'dashboard') {
+				const lines = split(content, /\r?\n/);
+				return { version: trim(lines[0] || ''), error: error() };
+			}
+
+			return { version: content, error: error() };
 		}
 	},
 	resources_update: {

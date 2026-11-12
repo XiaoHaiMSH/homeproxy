@@ -83,12 +83,13 @@ check_dashboard_update() {
 	[ -z "$github_token" ] || github_token="--header=Authorization: Bearer $github_token"
 	local commit_info="$($wget "${github_token:--q}" -O- "https://api.github.com/repos/$repo/commits?sha=$branch&per_page=1")"
 	local commit_sha="$(echo -e "$commit_info" | jsonfilter -qe "@[0].sha")"
+	local commit_date="$(echo -e "$commit_info" | jsonfilter -qe "@[0].commit.committer.date" 2>"/dev/null" | tr -cd "0-9")"
 	if [ -z "$commit_sha" ]; then
 		log "[DASHBOARD] Failed to get the latest version, please retry later."
 		return 1
 	fi
 
-	local local_ver="$(cat "$DASHBOARD_DIR/dashboard.ver" 2>"/dev/null" || echo "NOT FOUND")"
+	local local_ver="$(sed -n "2p" "$DASHBOARD_DIR/dashboard.ver" 2>"/dev/null")"
 	if [ "$local_ver" = "$commit_sha" ] && [ -s "$DASHBOARD_DIR/index.html" ]; then
 		log "[DASHBOARD] Current version: $commit_sha."
 		log "[DASHBOARD] You're already at the latest version."
@@ -148,7 +149,7 @@ check_dashboard_update() {
 	rm -f "$old_list" "$new_list"
 
 	rm -rf "$tmp_zip" "$tmp_dir" "$staging"
-	echo -e "$commit_sha" > "$DASHBOARD_DIR/dashboard.ver"
+	printf "%s\n%s\n" "$commit_date" "$commit_sha" > "$DASHBOARD_DIR/dashboard.ver"
 	log "[DASHBOARD] Successfully updated."
 
 	return 0
