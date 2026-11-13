@@ -76,17 +76,12 @@ msgid "Add a server"
 msgstr "新增服务器"
 
 #: htdocs/luci-static/resources/view/homeproxy/client.js:280
-msgid "Additional DNS servers used together with the China DNS server above."
-msgstr "与上方中国 DNS 服务器配合使用的备用 DNS 服务器。"
+msgid "Additional DNS servers used together with the China DNS server above. Support UDP, TCP, DoH, DoQ, DoT."
+msgstr "与上方国内 DNS 服务器配合使用的备用 DNS 服务器。支持 UDP、TCP、DoH、DoQ、DoT。"
 
 #: htdocs/luci-static/resources/view/homeproxy/client.js:275
-msgid ""
-"Additional DNS servers used together with the primary DNS server above. When "
-"set, queries are distributed across all of them according to the strategy "
-"below. Support UDP, TCP, DoH, DoQ, DoT."
-msgstr ""
-"与上方主 DNS 服务器配合使用的备用 DNS 服务器。设置后将按照下方策略在所有服务"
-"器间分发查询。支持 UDP、TCP、DoH、DoQ、DoT。"
+msgid "Additional DNS servers used together with the DNS server above. Support UDP, TCP, DoH, DoQ, DoT."
+msgstr "与上方 DNS 服务器配合使用的备用 DNS 服务器。支持 UDP、TCP、DoH、DoQ、DoT。"
 
 #: htdocs/luci-static/resources/view/homeproxy/node.js:546
 msgid "Address"
