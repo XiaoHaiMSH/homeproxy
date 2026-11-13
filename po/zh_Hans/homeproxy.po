@@ -247,10 +247,6 @@ msgstr "大陆白名单"
 msgid "CA provider"
 msgstr "CA 颁发机构"
 
-#: htdocs/luci-static/resources/view/homeproxy/client.js:244
-msgid "CNNIC Public DNS (210.2.4.8)"
-msgstr "CNNIC 公共 DNS（210.2.4.8）"
-
 #: htdocs/luci-static/resources/view/homeproxy/node.js:798
 msgid "CUBIC"
 msgstr "CUBIC"
@@ -298,10 +294,6 @@ msgstr "国内 IPv6 库版本"
 #: htdocs/luci-static/resources/view/homeproxy/server.js:740
 msgid "Cipher suites"
 msgstr "密码套件"
-
-#: htdocs/luci-static/resources/view/homeproxy/client.js:207
-msgid "Cisco Public DNS (208.67.222.222)"
-msgstr "思科公共 DNS（208.67.222.222）"
 
 #: htdocs/luci-static/resources/view/homeproxy/status.js:214
 msgid "Clean log"
@@ -3619,3 +3611,47 @@ msgstr "启用 Tailscale"
 
 #~ msgid "quic-go / uquic chrome"
 #~ msgstr "quic-go / uquic chrome"
+
+#: htdocs/luci-static/resources/view/homeproxy/client.js
+msgid "Google Public DNS (DoH)"
+msgstr "谷歌公共 DNS（DoH）"
+
+#: htdocs/luci-static/resources/view/homeproxy/client.js
+msgid "CloudFlare Public DNS (DoH)"
+msgstr "CloudFlare 公共 DNS（DoH）"
+
+#: htdocs/luci-static/resources/view/homeproxy/client.js
+msgid "Quad9 Public DNS (DoH)"
+msgstr "Quad9 公共 DNS（DoH）"
+
+#: htdocs/luci-static/resources/view/homeproxy/client.js
+msgid "Tencent Public DNS (DoH)"
+msgstr "腾讯公共 DNS（DoH）"
+
+#: htdocs/luci-static/resources/view/homeproxy/client.js
+msgid "Aliyun Public DNS (DoH)"
+msgstr "阿里云公共 DNS（DoH）"
+
+#: htdocs/luci-static/resources/view/homeproxy/client.js
+msgid "360 Public DNS (DoH)"
+msgstr "360 公共 DNS（DoH）"
+
+#: htdocs/luci-static/resources/view/homeproxy/client.js
+msgid "AdGuard Public DNS (DoH)"
+msgstr "AdGuard 公共 DNS（DoH）"
+
+#: htdocs/luci-static/resources/view/homeproxy/client.js
+msgid "ThreatBook Public DNS (DoH)"
+msgstr "微步在线公共 DNS（DoH）"
+
+#: htdocs/luci-static/resources/view/homeproxy/client.js
+msgid "Quad9 Public DNS (9.9.9.9)"
+msgstr "Quad9 公共 DNS（9.9.9.9）"
+
+#: htdocs/luci-static/resources/view/homeproxy/client.js
+msgid "AdGuard Public DNS (94.140.14.14)"
+msgstr "AdGuard 公共 DNS（94.140.14.14）"
+
+#: htdocs/luci-static/resources/view/homeproxy/client.js
+msgid "TrafficRoute Public DNS (180.184.1.1)"
+msgstr "TrafficRoute 公共 DNS（180.184.1.1）"
