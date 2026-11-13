@@ -236,10 +236,6 @@ msgstr ""
 msgid "CA provider"
 msgstr ""
 
-#: htdocs/luci-static/resources/view/homeproxy/client.js:244
-msgid "CNNIC Public DNS (210.2.4.8)"
-msgstr ""
-
 #: htdocs/luci-static/resources/view/homeproxy/node.js:798
 msgid "CUBIC"
 msgstr ""
@@ -286,10 +282,6 @@ msgstr ""
 #: htdocs/luci-static/resources/view/homeproxy/node.js:1517
 #: htdocs/luci-static/resources/view/homeproxy/server.js:740
 msgid "Cipher suites"
-msgstr ""
-
-#: htdocs/luci-static/resources/view/homeproxy/client.js:207
-msgid "Cisco Public DNS (208.67.222.222)"
 msgstr ""
 
 #: htdocs/luci-static/resources/view/homeproxy/status.js:214
@@ -2914,4 +2906,48 @@ msgstr ""
 
 #: htdocs/luci-static/resources/view/homeproxy/client.js
 msgid "Enable Tailscale"
+msgstr ""
+
+#: htdocs/luci-static/resources/view/homeproxy/client.js
+msgid "Google Public DNS (DoH)"
+msgstr ""
+
+#: htdocs/luci-static/resources/view/homeproxy/client.js
+msgid "CloudFlare Public DNS (DoH)"
+msgstr ""
+
+#: htdocs/luci-static/resources/view/homeproxy/client.js
+msgid "Quad9 Public DNS (DoH)"
+msgstr ""
+
+#: htdocs/luci-static/resources/view/homeproxy/client.js
+msgid "Tencent Public DNS (DoH)"
+msgstr ""
+
+#: htdocs/luci-static/resources/view/homeproxy/client.js
+msgid "Aliyun Public DNS (DoH)"
+msgstr ""
+
+#: htdocs/luci-static/resources/view/homeproxy/client.js
+msgid "360 Public DNS (DoH)"
+msgstr ""
+
+#: htdocs/luci-static/resources/view/homeproxy/client.js
+msgid "AdGuard Public DNS (DoH)"
+msgstr ""
+
+#: htdocs/luci-static/resources/view/homeproxy/client.js
+msgid "ThreatBook Public DNS (DoH)"
+msgstr ""
+
+#: htdocs/luci-static/resources/view/homeproxy/client.js
+msgid "Quad9 Public DNS (9.9.9.9)"
+msgstr ""
+
+#: htdocs/luci-static/resources/view/homeproxy/client.js
+msgid "AdGuard Public DNS (94.140.14.14)"
+msgstr ""
+
+#: htdocs/luci-static/resources/view/homeproxy/client.js
+msgid "TrafficRoute Public DNS (180.184.1.1)"
 msgstr ""
