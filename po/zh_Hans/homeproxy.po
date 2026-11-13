@@ -3654,4 +3654,4 @@ msgstr "AdGuard 公共 DNS（94.140.14.14）"
 
 #: htdocs/luci-static/resources/view/homeproxy/client.js
 msgid "TrafficRoute Public DNS (180.184.1.1)"
-msgstr "TrafficRoute 公共 DNS（180.184.1.1）"
+msgstr "火山引擎公共 DNS（180.184.1.1）"
