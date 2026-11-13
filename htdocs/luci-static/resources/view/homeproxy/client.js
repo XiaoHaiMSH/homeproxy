@@ -338,7 +338,7 @@ return view.extend({
 		}
 
 		o = s.taboption('dns', form.DynamicList, 'dns_server_fallback', _('DNS server (fallback)'),
-			_('Additional DNS servers used together with the primary DNS server above. When set, queries are distributed across all of them according to the strategy below. Support UDP, TCP, DoH, DoQ, DoT.'));
+			_('Additional DNS servers used together with the DNS server above. Support UDP, TCP, DoH, DoQ, DoT.'));
 		o.value('https://dns.google/dns-query', _('Google Public DNS (DoH)'));
 		o.value('https://cloudflare-dns.com/dns-query', _('CloudFlare Public DNS (DoH)'));
 		o.value('https://dns.quad9.net/dns-query', _('Quad9 Public DNS (DoH)'));
@@ -347,7 +347,7 @@ return view.extend({
 		o.validate = validateDnsFallback;
 
 		o = s.taboption('dns', form.DynamicList, 'china_dns_server_fallback', _('China DNS server (fallback)'),
-			_('Additional DNS servers used together with the China DNS server above.'));
+			_('Additional DNS servers used together with the China DNS server above. Support UDP, TCP, DoH, DoQ, DoT.'));
 		o.depends('routing_mode', 'bypass_mainland_china');
 		o.value('https://dns.alidns.com/dns-query', _('Aliyun Public DNS (DoH)'));
 		o.value('https://doh.pub/dns-query', _('Tencent Public DNS (DoH)'));
