@@ -271,13 +271,10 @@ return view.extend({
 		o = s.taboption('dns', form.Value, 'dns_server', _('DNS server'),
 			_('Support UDP, TCP, DoH, DoQ, DoT. TCP protocol will be used if not specified.'));
 		o.value('wan', _('WAN DNS (read from interface)'));
-		o.value('1.1.1.1', _('CloudFlare Public DNS (1.1.1.1)'));
-		o.value('208.67.222.222', _('Cisco Public DNS (208.67.222.222)'));
 		o.value('8.8.8.8', _('Google Public DNS (8.8.8.8)'));
-		o.value('', '---');
-		o.value('223.5.5.5', _('Aliyun Public DNS (223.5.5.5)'));
-		o.value('119.29.29.29', _('Tencent Public DNS (119.29.29.29)'));
-		o.value('117.50.10.10', _('ThreatBook Public DNS (117.50.10.10)'));
+		o.value('1.1.1.1', _('CloudFlare Public DNS (1.1.1.1)'));
+		o.value('9.9.9.9', _('Quad9 Public DNS (9.9.9.9)'));
+		o.value('94.140.14.14', _('AdGuard Public DNS (94.140.14.14)'));
 		o.default = '8.8.8.8';
 		o.rmempty = false;
 		o.validate = function(section_id, value) {
@@ -309,9 +306,9 @@ return view.extend({
 			_('The dns server for resolving China domains. Support UDP, TCP, DoH, DoQ, DoT.'));
 		o.value('wan', _('WAN DNS (read from interface)'));
 		o.value('223.5.5.5', _('Aliyun Public DNS (223.5.5.5)'));
-		o.value('210.2.4.8', _('CNNIC Public DNS (210.2.4.8)'));
 		o.value('119.29.29.29', _('Tencent Public DNS (119.29.29.29)'));
 		o.value('117.50.10.10', _('ThreatBook Public DNS (117.50.10.10)'));
+		o.value('180.184.1.1', _('TrafficRoute Public DNS (180.184.1.1)'));
 		o.depends('routing_mode', 'bypass_mainland_china');
 		o.default = '223.5.5.5';
 		o.rmempty = false;
@@ -342,12 +339,20 @@ return view.extend({
 
 		o = s.taboption('dns', form.DynamicList, 'dns_server_fallback', _('DNS server (fallback)'),
 			_('Additional DNS servers used together with the primary DNS server above. When set, queries are distributed across all of them according to the strategy below. Support UDP, TCP, DoH, DoQ, DoT.'));
+		o.value('https://dns.google/dns-query', _('Google Public DNS (DoH)'));
+		o.value('https://cloudflare-dns.com/dns-query', _('CloudFlare Public DNS (DoH)'));
+		o.value('https://dns.quad9.net/dns-query', _('Quad9 Public DNS (DoH)'));
+		o.value('https://dns.adguard-dns.com/dns-query', _('AdGuard Public DNS (DoH)'));
 		o.retain = true;
 		o.validate = validateDnsFallback;
 
 		o = s.taboption('dns', form.DynamicList, 'china_dns_server_fallback', _('China DNS server (fallback)'),
 			_('Additional DNS servers used together with the China DNS server above.'));
 		o.depends('routing_mode', 'bypass_mainland_china');
+		o.value('https://dns.alidns.com/dns-query', _('Aliyun Public DNS (DoH)'));
+		o.value('https://doh.pub/dns-query', _('Tencent Public DNS (DoH)'));
+		o.value('https://doh.360.cn/dns-query', _('360 Public DNS (DoH)'));
+		o.value('https://doh-pure.onedns.net/dns-query', _('ThreatBook Public DNS (DoH)'));
 		o.retain = true;
 		o.validate = validateDnsFallback;
 
@@ -563,139 +568,6 @@ return view.extend({
 		so.retain = true;
 		/* Application routing end */
 
-		/* Tailscale settings start */
-		s.tab('tailscale', _('Tailscale'));
-
-		o = s.taboption('tailscale', form.SectionValue, '_tailscale', form.NamedSection,
-			'tailscale', 'homeproxy');
-		ss = o.subsection;
-
-		so = ss.option(form.Flag, 'enabled', _('Enable Tailscale'));
-		so.default = so.disabled;
-		so.rmempty = false;
-
-		so = ss.option(form.Value, 'auth_key', _('Authentication key'),
-			_('Only used when the node is created for the first time. Leave it empty to sign in with the login link below.'));
-		so.password = true;
-		so.rmempty = true;
-		so.retain = true;
-		so.depends('enabled', '1');
-
-		so = ss.option(form.DummyValue, '_tailscale_status', _('Login status'));
-		so.depends('enabled', '1');
-		so.renderWidget = function() {
-			const container = E('div', {}, _('Collecting data...'));
-
-			const refresh = () => L.resolveDefault(callTailscaleStatus(), {}).then((status) => {
-				dom.content(container, renderTailscaleStatus(status));
-			});
-
-			/* drop the previous closure, a re-render would keep polling it */
-			if (this.statusRefresh)
-				poll.remove(this.statusRefresh);
-
-			this.statusRefresh = refresh;
-			poll.add(refresh, 5);
-			refresh();
-
-			return container;
-		};
-
-		so = ss.option(form.Value, 'control_url', _('Control server'),
-			_('Coordination server URL. Leave it empty to use the official Tailscale service.'));
-		so.placeholder = 'https://controlplane.tailscale.com';
-		so.rmempty = true;
-		so.retain = true;
-		so.depends('enabled', '1');
-		so.validate = function(_section_id, value) {
-			if (!value)
-				return true;
-
-			try {
-				const url = new URL(value);
-				return (url.hostname && ['http:', 'https:'].includes(url.protocol)) ||
-					_('Expecting: %s').format(_('valid URL'));
-			} catch (e) {
-				return _('Expecting: %s').format(_('valid URL'));
-			}
-		};
-
-		so = ss.option(form.Value, 'hostname', _('Hostname'),
-			_('The device name shown in the Tailscale network. The system hostname is used when empty.'));
-		so.datatype = 'hostname';
-		so.rmempty = true;
-		so.retain = true;
-		so.depends('enabled', '1');
-
-		so = ss.option(form.Flag, 'accept_routes', _('Accept routes'),
-			_('Accept subnet routes advertised by other Tailscale nodes.'));
-		so.default = so.disabled;
-		so.rmempty = false;
-		so.retain = true;
-		so.depends('enabled', '1');
-
-		so = ss.option(form.Value, 'exit_node', _('Exit node'),
-			_('Exit node name or IP address. Used as the default route once the exit node is approved.'));
-		so.rmempty = true;
-		so.retain = true;
-		so.depends('enabled', '1');
-		so.validate = function(section_id, value) {
-			if (!value)
-				return true;
-
-			if (this.section.formvalue(section_id, 'advertise_exit_node') === '1')
-				return _('An exit node cannot be used and advertised at the same time.');
-
-			return stubValidator.apply('hostname', value) ||
-				stubValidator.apply('ip4addr', value) ||
-				stubValidator.apply('ip6addr', value) ||
-				_('Expecting: %s').format(_('valid hostname or IP address'));
-		};
-
-		so = ss.option(form.Flag, 'exit_node_allow_lan_access', _('Allow LAN access with exit node'),
-			_('Keep locally reachable subnets outside the selected exit node.'));
-		so.default = so.disabled;
-		so.rmempty = false;
-		so.retain = true;
-		so.depends('enabled', '1');
-
-		so = ss.option(form.DynamicList, 'advertise_routes', _('Advertised routes'),
-			_('LAN subnets advertised as reachable through this router. Every route must also be approved on the coordination server.'));
-		so.rmempty = true;
-		so.retain = true;
-		so.depends('enabled', '1');
-		so.validate = function(_section_id, value) {
-			/* Validate here, the CIDR datatype would replace the value by its prefix length */
-			if (value && !stubValidator.apply('cidr', value))
-				return _('Expecting: %s').format(_('valid network in CIDR notation'));
-
-			if (value === '0.0.0.0/0' || value === '::/0')
-				return _('Use "Advertise as exit node" instead of a default route.');
-
-			return true;
-		};
-
-		so = ss.option(form.Flag, 'advertise_exit_node', _('Advertise as exit node'),
-			_('Advertise this router as an exit node. It still has to be approved on the coordination server.'));
-		so.default = so.disabled;
-		so.rmempty = false;
-		so.retain = true;
-		so.depends('enabled', '1');
-		so.validate = function(section_id, value) {
-			if (value === '1' && this.section.formvalue(section_id, 'exit_node'))
-				return _('An exit node cannot be used and advertised at the same time.');
-
-			return true;
-		};
-
-		so = ss.option(form.Value, 'listen_port', _('Listen port'),
-			_('UDP port used for WireGuard and peer-to-peer traffic. A port is chosen automatically when empty.'));
-		so.datatype = 'port';
-		so.rmempty = true;
-		so.retain = true;
-		so.depends('enabled', '1');
-		/* Tailscale settings end */
-
 		/* Dashboard settings start */
 		s.tab('dashboard', _('Dashboard'));
 
@@ -859,6 +731,139 @@ return view.extend({
 		}
 		/* Direct domain list end */
 		/* ACL settings end */
+
+		/* Tailscale settings start */
+		s.tab('tailscale', _('Tailscale'));
+
+		o = s.taboption('tailscale', form.SectionValue, '_tailscale', form.NamedSection,
+			'tailscale', 'homeproxy');
+		ss = o.subsection;
+
+		so = ss.option(form.Flag, 'enabled', _('Enable Tailscale'));
+		so.default = so.disabled;
+		so.rmempty = false;
+
+		so = ss.option(form.Value, 'auth_key', _('Authentication key'),
+			_('Only used when the node is created for the first time. Leave it empty to sign in with the login link below.'));
+		so.password = true;
+		so.rmempty = true;
+		so.retain = true;
+		so.depends('enabled', '1');
+
+		so = ss.option(form.DummyValue, '_tailscale_status', _('Login status'));
+		so.depends('enabled', '1');
+		so.renderWidget = function() {
+			const container = E('div', {}, _('Collecting data...'));
+
+			const refresh = () => L.resolveDefault(callTailscaleStatus(), {}).then((status) => {
+				dom.content(container, renderTailscaleStatus(status));
+			});
+
+			/* drop the previous closure, a re-render would keep polling it */
+			if (this.statusRefresh)
+				poll.remove(this.statusRefresh);
+
+			this.statusRefresh = refresh;
+			poll.add(refresh, 5);
+			refresh();
+
+			return container;
+		};
+
+		so = ss.option(form.Value, 'control_url', _('Control server'),
+			_('Coordination server URL. Leave it empty to use the official Tailscale service.'));
+		so.placeholder = 'https://controlplane.tailscale.com';
+		so.rmempty = true;
+		so.retain = true;
+		so.depends('enabled', '1');
+		so.validate = function(_section_id, value) {
+			if (!value)
+				return true;
+
+			try {
+				const url = new URL(value);
+				return (url.hostname && ['http:', 'https:'].includes(url.protocol)) ||
+					_('Expecting: %s').format(_('valid URL'));
+			} catch (e) {
+				return _('Expecting: %s').format(_('valid URL'));
+			}
+		};
+
+		so = ss.option(form.Value, 'hostname', _('Hostname'),
+			_('The device name shown in the Tailscale network. The system hostname is used when empty.'));
+		so.datatype = 'hostname';
+		so.rmempty = true;
+		so.retain = true;
+		so.depends('enabled', '1');
+
+		so = ss.option(form.Flag, 'accept_routes', _('Accept routes'),
+			_('Accept subnet routes advertised by other Tailscale nodes.'));
+		so.default = so.disabled;
+		so.rmempty = false;
+		so.retain = true;
+		so.depends('enabled', '1');
+
+		so = ss.option(form.Value, 'exit_node', _('Exit node'),
+			_('Exit node name or IP address. Used as the default route once the exit node is approved.'));
+		so.rmempty = true;
+		so.retain = true;
+		so.depends('enabled', '1');
+		so.validate = function(section_id, value) {
+			if (!value)
+				return true;
+
+			if (this.section.formvalue(section_id, 'advertise_exit_node') === '1')
+				return _('An exit node cannot be used and advertised at the same time.');
+
+			return stubValidator.apply('hostname', value) ||
+				stubValidator.apply('ip4addr', value) ||
+				stubValidator.apply('ip6addr', value) ||
+				_('Expecting: %s').format(_('valid hostname or IP address'));
+		};
+
+		so = ss.option(form.Flag, 'exit_node_allow_lan_access', _('Allow LAN access with exit node'),
+			_('Keep locally reachable subnets outside the selected exit node.'));
+		so.default = so.disabled;
+		so.rmempty = false;
+		so.retain = true;
+		so.depends('enabled', '1');
+
+		so = ss.option(form.DynamicList, 'advertise_routes', _('Advertised routes'),
+			_('LAN subnets advertised as reachable through this router. Every route must also be approved on the coordination server.'));
+		so.rmempty = true;
+		so.retain = true;
+		so.depends('enabled', '1');
+		so.validate = function(_section_id, value) {
+			/* Validate here, the CIDR datatype would replace the value by its prefix length */
+			if (value && !stubValidator.apply('cidr', value))
+				return _('Expecting: %s').format(_('valid network in CIDR notation'));
+
+			if (value === '0.0.0.0/0' || value === '::/0')
+				return _('Use "Advertise as exit node" instead of a default route.');
+
+			return true;
+		};
+
+		so = ss.option(form.Flag, 'advertise_exit_node', _('Advertise as exit node'),
+			_('Advertise this router as an exit node. It still has to be approved on the coordination server.'));
+		so.default = so.disabled;
+		so.rmempty = false;
+		so.retain = true;
+		so.depends('enabled', '1');
+		so.validate = function(section_id, value) {
+			if (value === '1' && this.section.formvalue(section_id, 'exit_node'))
+				return _('An exit node cannot be used and advertised at the same time.');
+
+			return true;
+		};
+
+		so = ss.option(form.Value, 'listen_port', _('Listen port'),
+			_('UDP port used for WireGuard and peer-to-peer traffic. A port is chosen automatically when empty.'));
+		so.datatype = 'port';
+		so.rmempty = true;
+		so.retain = true;
+		so.depends('enabled', '1');
+		/* Tailscale settings end */
 
 		return m.render();
 	}
