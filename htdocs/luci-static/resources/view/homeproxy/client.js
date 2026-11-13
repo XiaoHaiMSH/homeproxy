@@ -198,15 +198,33 @@ return view.extend({
 				});
 			};
 
-			poll.add(function () {
-				return Promise.all([
-					L.resolveDefault(getServiceStatus(), {}),
-					getCurrentNode()
-				]).then((res) => {
-					let view = document.getElementById('service_status');
-					view.innerHTML = renderStatus(res[0], features.version, res[1]);
+			const paintStatus = (isRunning, node) => {
+				const view = document.getElementById('service_status');
+
+				if (view)
+					view.innerHTML = renderStatus(isRunning, features.version, node);
+			};
+
+			let quickChecks = 10;
+
+			const refreshStatus = () => {
+				return L.resolveDefault(getServiceStatus(), false).then((isRunning) => {
+					paintStatus(isRunning, cachedNode);
+
+					if (!isRunning) {
+						if (quickChecks > 0) {
+							quickChecks--;
+							setTimeout(refreshStatus, 1000);
+						}
+						return;
+					}
+
+					quickChecks = 10;
+					return getCurrentNode().then((node) => paintStatus(isRunning, node));
 				});
-			});
+			};
+
+			poll.add(refreshStatus);
 
 			return E('div', { class: 'cbi-section', id: 'status_bar' }, [
 					E('p', { id: 'service_status' }, _('Collecting data...'))
